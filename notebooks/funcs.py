@@ -7,12 +7,21 @@ from sys import argv
 from osgeo import gdal
 import matplotlib.pyplot as plt
 import os
+from pathlib import Path
+import sys
 
+#TODO
+## hide functions with preceeding _ from users
+## initial so that if any function is called a folder is written to disk
+## add docstrings
+## add spinner
+## add pip install setup tools
+## abstract into classes
 
 def create_dir(directory):
     if not os.path.exists(directory):
         os.makedirs(directory)
-        
+    return os.path.abspath(directory)
         
 def extract_gpd_geometry(gdf):
     x = []
@@ -76,27 +85,156 @@ def iter_mp_to_csv(ba_dir):
         match_csv_list.append(fn)
     return match_csv_list
 
-def plot_ip_over_images(ba_dir, img_dir, img_extension='8.tif', out_dir='plots/'):
+def plot_ip_over_images(ba_dir, 
+                        img_dir, 
+                        img_extension='.tif', 
+                        out_dir='qc_plots'):
     
-    create_dir(out_dir)
+    '''
+    
+    Function to visualize interest points in an image.
+    
+    All images ending in img_extension pattern will be used. 
+    For example, img_extension can be '.tif' or '8.tif'
+    
+    '''
+    
+    print('plotting interest points over images...')
+    
+    # create output directory
+    out_dir_abs = create_dir(out_dir)
+    
+    # convert interest points in binary vwip files to csv.
     ip_csv_list = iter_ip_to_csv(ba_dir)
+    
+    # get images list
     img_list = sorted(glob.glob(img_dir+'*'+img_extension))
     
+    # check if img_list and ip_csv_list same length
+    if not len(ip_csv_list) == len(img_list):
+        print(
+            '''
+            Length of interest point file list and image file list
+            does not match. Check inputs. 
+            
+            TODO note: Need to implement exception to proceed with 
+            corresponding files and list omissions.
+            '''
+        )
+        sys.exit(1)
+    
+    # plot interest points over images
     for i,v in enumerate(ip_csv_list):
-        img_base_name = img_list[i].split('/')[-1].split('.tif')[0]
+        img_base_name = os.path.basename(img_list[i]).split('.')[0]
         
         img = gdal.Open(img_list[i])
         img = np.array(img.ReadAsArray())
         
         df = pd.read_csv(v, delimiter=r"\s+")
         fig, ax = plt.subplots(1,figsize=(10,10))
-        ax.scatter(df['x1'],df['y1'],color='r',marker='o',facecolor='none',s=10)
+        ax.scatter(df['x1'],df['y1'],
+                   color='r',
+                   marker='o',
+                   facecolor='none',
+                   s=10)
         ax.imshow(img,cmap='gray')
-        ax.set_title('interest points\n'+img_base_name+'.tif')
+        ax.set_title('interest points\n'+
+                     img_base_name+img_extension.split('.')[-1])
         
-        out = out_dir+img_base_name+'_ip_plot.png'
+        out = os.path.join(out_dir_abs,
+                           img_base_name+'_interest_points.png')
+        fig.savefig(out)     
+
+
+def plot_mp_over_images(ba_dir, 
+                        img_dir, 
+                        img_extension='.tif', 
+                        out_dir='qc_plots'): 
+
+    '''
     
+    Function to visualize match points found between two images.
+    
+    All images ending in pattern and contained in img_dir  
+    will be extracted. For example, img_extension can be 
+    '.tif' or '8.tif'
+    
+    Image names cannot have a '-' character in them, else
+    the images for a given match file won't be extracted properly.
+    
+    TODO note: need cleaner way to extract image file paths that belong
+    to a .match file.
+    
+    '''
+    
+    print('plotting match points over images...')
+    
+    # create output directory
+    out_dir_abs = create_dir(out_dir)
+    
+    # convert .match files to csv
+    match_csv_list = iter_mp_to_csv(ba_dir)
+    
+    # get images list
+    img_list = sorted(glob.glob(img_dir+'*'+img_extension))
+
+    for i,v in enumerate(match_csv_list):
+        tmp = parse_image_names_from_match_file_name(v,img_list)
+        img1_file_name= tmp[0]
+        img2_file_name = tmp[1]
+        match_img1_name= tmp[2]
+        match_img2_name = tmp[3]
+
+        df = pd.read_csv(v, delimiter=r"\s+")
+        
+        img1 = gdal.Open(img1_file_name)
+        img1 = np.array(img1.ReadAsArray())        
+
+        img2 = gdal.Open(img2_file_name)
+        img2 = np.array(img2.ReadAsArray()) 
+        
+        
+        fig, ax = plt.subplots(1,2,figsize=(20,10))
+        fig.suptitle('match points\n'+ 
+                     match_img1_name +' and '+
+                     match_img2_name)
+        
+        ax[0].scatter(df['x1'],df['y1'],color='r',marker='o',facecolor='none',s=10)
+        ax[0].imshow(img1,cmap='gray')
+        ax[0].set_title(match_img1_name)
+        
+        ax[1].scatter(df['x2'],df['y2'],color='r',marker='o',facecolor='none',s=10)
+        ax[1].imshow(img2,cmap='gray')
+        ax[1].set_title(match_img2_name)
+        
+        out = os.path.join(out_dir_abs,
+                           match_img1_name + '__' + match_img2_name+'_match_points.png')
         fig.savefig(out)
+
+def parse_image_names_from_match_file_name(match_file, img_list):
+    '''
+    
+    Function to parse out image file names from match files.
+    Image file names cannot have '-' in them, else this will break.
+
+    '''
+    
+    # Get image extension and image base path
+    img_ext = '.' + os.path.basename(img_list[0]).split('.')[-1]
+    img_base_path = os.path.dirname(img_list[0])
+    
+    # Extract image paire file names from ASP match file name
+    # For example e.g. split ../run-v2_sub8__v3_sub8-clean.csv 
+    # into v2_sub8 and v3_sub8.
+    # Image names cannot have a '-' in them else this will break.
+    
+    match_img1_name = os.path.basename(match_file).split('.')[0].split('-')[-2].split('__')[0]
+    img1_file_name = os.path.join(img_base_path, match_img1_name+img_ext)
+
+    match_img2_name = os.path.basename(match_file).split('.')[0].split('-')[-2].split('__')[1]
+    img2_file_name = os.path.join(img_base_path, match_img2_name+img_ext)
+    
+    return img1_file_name, img2_file_name , match_img1_name, match_img2_name
 
 def read_ip_record(mf):
     x, y = np.frombuffer(mf.read(8), dtype=np.float32)
@@ -106,7 +244,9 @@ def read_ip_record(mf):
     octave, scale_lvl = np.frombuffer(mf.read(8), dtype=np.uint32)
     ndesc, = np.frombuffer(mf.read(8), dtype=np.uint64)
     desc = np.frombuffer(mf.read(int(ndesc * 4)), dtype=np.float32)
-    iprec = [x, y, xi, yi, orientation, scale, interest, polarity, octave, scale_lvl, ndesc]
+    iprec = [x, y, xi, yi, orientation, 
+             scale, interest, polarity, 
+             octave, scale_lvl, ndesc]
     iprec.extend(desc)
     return iprec
 
@@ -133,5 +273,8 @@ def write_mp_to_csv(filename):
         im1_ip = [read_ip_record(mf) for i in range(size1)]
         im2_ip = [read_ip_record(mf) for i in range(size2)]
         for i in range(len(im1_ip)):
-            out.write('{} {} {} {}\n'.format(im1_ip[i][0], im1_ip[i][1], im2_ip[i][0], im2_ip[i][1]))
+            out.write('{} {} {} {}\n'.format(im1_ip[i][0], 
+                                             im1_ip[i][1], 
+                                             im2_ip[i][0], 
+                                             im2_ip[i][1]))
     return filename_out

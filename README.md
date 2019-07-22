@@ -16,7 +16,7 @@ Outputs
 
 ## TODO
 
-- plot match points over images
+
 - plot xy and z cam positions
 - clean up libraries
 - parse code into seperate libraries
@@ -25,5 +25,6 @@ Outputs
 ## DONE
 
 - plot interest points over images
+- plot match points over images
 
 
