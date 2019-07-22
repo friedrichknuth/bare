@@ -12,7 +12,10 @@ Inputs
 Outputs
 - plot of images with interest points
 - plot of images with match points
+- plot dxdy
 - plot showing xy and z camera positions before and after bundle adjustment
+- plot residuals
+
 
 ## TODO
 
@@ -26,5 +29,6 @@ Outputs
 
 - plot interest points over images
 - plot match points over images
+- plot dxdy
 
 
