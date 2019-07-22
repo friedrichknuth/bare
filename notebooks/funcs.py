@@ -88,7 +88,7 @@ def iter_mp_to_csv(ba_dir):
 def plot_ip_over_images(ba_dir, 
                         img_dir, 
                         img_extension='.tif', 
-                        out_dir='qc_plots'):
+                        out_dir='qc_plots/interest_points'):
     
     '''
     
@@ -143,13 +143,14 @@ def plot_ip_over_images(ba_dir,
         
         out = os.path.join(out_dir_abs,
                            img_base_name+'_interest_points.png')
-        fig.savefig(out)     
+        fig.savefig(out)
+        plt.close()
 
 
 def plot_mp_over_images(ba_dir, 
                         img_dir, 
                         img_extension='.tif', 
-                        out_dir='qc_plots'): 
+                        out_dir='qc_plots/match_points'): 
 
     '''
     
@@ -210,6 +211,35 @@ def plot_mp_over_images(ba_dir,
         out = os.path.join(out_dir_abs,
                            match_img1_name + '__' + match_img2_name+'_match_points.png')
         fig.savefig(out)
+        plt.close()
+        
+        
+def plot_dxdy(ba_dir, out_dir='qc_plots/dxdy'):
+    
+    # create output directory
+    out_dir_abs = create_dir(out_dir)
+    
+    match_csv_list = iter_mp_to_csv(ba_dir)
+    
+    for i,v in enumerate(match_csv_list):
+        
+        df = pd.read_csv(v, delimiter=r"\s+")
+        
+        df['dx'] = df['x2'] - df['x1']
+        df['dy'] = df['y2'] - df['y1']
+        
+        img_match_names = os.path.basename(v).split('.')[0].split('-')[-2]
+
+        fig, ax = plt.subplots(1,figsize=(10,10))
+        ax.scatter(df['dx'],df['dy'],color='b',marker='o',facecolor='none',s=10)
+        ax.set_aspect('equal')
+        ax.set_title('dx/dy\n'+img_match_names)
+
+        out = os.path.join(out_dir_abs,img_match_names+'_dxdy_plot.png')
+        fig.savefig(out)
+        plt.close()
+        
+    
 
 def parse_image_names_from_match_file_name(match_file, img_list):
     '''
