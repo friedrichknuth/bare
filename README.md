@@ -18,17 +18,26 @@ Outputs
 
 
 ## TODO
-- plot xy and z cam positions
-- plot residuals
-- clean up libraries
-- parse code into seperate libraries
-- write csv products to temporary folder and don't mess with content in input folders
+V0
+- add pip install
 - add environment yml
+- add examples notebook
+- update readme with description and guidelines
+
+V1
+- put code into classes
+- plot camera foot prints before and after bundle adjust
+- plot camera orientations before and after bundle adjust
+- create interactive html plots for residuals
+- write csv products to temporary folder and don't mess with content in input folders
 
 ## DONE
 
+V0
+- plot xy and z cam positions
 - plot interest points over images
 - plot match points over images
 - plot dxdy
+- plot residuals
 
 
