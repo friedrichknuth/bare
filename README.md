@@ -18,12 +18,12 @@ Outputs
 
 
 ## TODO
-
-
 - plot xy and z cam positions
+- plot residuals
 - clean up libraries
 - parse code into seperate libraries
 - write csv products to temporary folder and don't mess with content in input folders
+- add environment yml
 
 ## DONE
 
