@@ -1,4 +1,4 @@
-name: asp_ba_eval
+name: asp
 channels:
   - conda-forge
 dependencies:
@@ -6,8 +6,8 @@ dependencies:
   - matplotlib
   - geopandas
   - shapely
+  - contextily
   - pip
   - pip:
     - gdal
-    - contextily
-    # - "--editable=git+https://github.com/friedrichknuth/asp_ba_eval.git#egg=asp_ba_eval"
+  # - "--editable=git+https://github.com/friedrichknuth/asp_ba_eval.git#egg=asp_ba_eval"
