@@ -14,9 +14,13 @@ from shapely.geometry import Point
 import contextily as ctx
 import matplotlib.pyplot as plt
 
+import warnings
+warnings.filterwarnings("ignore", message="Palette images with Transparency")
+
 
 #TODO
 '''
+- write converted csv files to a seperate folder
 - hide functions with preceeding _ from users
 - organize into classes
     - initialize so that if any main function is called a folder is written to disk.
@@ -36,7 +40,6 @@ def create_dir(directory):
     return os.path.abspath(directory)
 
 # GEOSPATIAL ANALYSIS FUNCTIONS
-        
 def extract_gpd_geometry(gdf):
     x = []
     y = []
@@ -49,31 +52,11 @@ def extract_gpd_geometry(gdf):
     gdf['x'] = x
     gdf['y'] = y
     gdf['z'] = z
-    
-
-# ASP FUNCTIONS
-def extract_tsai_coordinates(tsai_dir, extension):
-    geometry = []
-    for filename in sorted(glob.glob(tsai_dir+'*'+extension)):
-        if filename.endswith(extension):
-
-            with open(filename) as f:
-                sub = 'C = '
-                lines = [line.rstrip('\n') for line in f]
-                coords = [s for s in lines if sub in s]
-                coords = coords[0].split()[-3:]
-                lon = float(coords[0])
-                lat = float(coords[1])
-                alt = float(coords[2])
-                geometry.append(Point(lon,lat,alt))
-
-    tsai_points = gpd.GeoDataFrame(crs={'init' :'epsg:4978'}, geometry=geometry)
-    return tsai_points
 
 
 ## BUNDLE ADJUST QC FUNCTIONS
 def iter_ip_to_csv(ba_dir):
-    print('converting interest point files (vwip) to csv...')
+#     print('converting interest point files (vwip) to csv...')
     vwips = sorted(glob.glob(ba_dir+"*.vwip"))
     ip_csv_list = []
     for filename in vwips:
@@ -83,17 +66,17 @@ def iter_ip_to_csv(ba_dir):
         
 
 def iter_mp_to_csv(ba_dir):
-    print('converting match point files to csv...')
+#     print('converting match point files to csv...')
     matches = sorted(glob.glob(ba_dir+"*clean.match"))
     if matches:
-        print('processing clean.match files only.')
+        print('    processing clean.match files only.')
     else:
-        print('no clean.match files found.')
+        print('    no clean.match files found.')
         matches = sorted(glob.glob(ba_dir+"*.match"))
         if matches:
-            print('processing .match files.')
+            print('    processing .match files.')
         else:
-            print('no .match files found.')
+            print('    no .match files found.')
             sys.exit(1)
     match_csv_list = []
     for filename in matches:
@@ -230,7 +213,7 @@ def plot_ip_over_images(ba_dir,
         
         out = os.path.join(out_dir_abs,
                            img_base_name+'_interest_points.png')
-        fig.savefig(out)
+        fig.savefig(out, bbox_inches = "tight")
         plt.close()
 
 ## MATCH POINTS
@@ -297,11 +280,13 @@ def plot_mp_over_images(ba_dir,
         
         out = os.path.join(out_dir_abs,
                            match_img1_name + '__' + match_img2_name+'_match_points.png')
-        fig.savefig(out)
+        fig.savefig(out, bbox_inches = "tight")
         plt.close()
         
 ## DISPARITY   
 def plot_dxdy(ba_dir, out_dir='qc_plots/dxdy'):
+    
+    print('plotting dxdy...')
     
     # create output directory
     out_dir_abs = create_dir(out_dir)
@@ -323,7 +308,7 @@ def plot_dxdy(ba_dir, out_dir='qc_plots/dxdy'):
         ax.set_title('dx/dy\n'+img_match_names)
 
         out = os.path.join(out_dir_abs,img_match_names+'_dxdy_plot.png')
-        fig.savefig(out)
+        fig.savefig(out, bbox_inches = "tight")
         plt.close()
         
         
@@ -395,10 +380,124 @@ def plot_residuals(ba_dir,
     ctx.add_basemap(ax[1])
     
     out = os.path.join(out_dir_abs,'residuals_before_and_after.png')
-    fig.savefig(out)
+    fig.savefig(out, bbox_inches = "tight")
     plt.close()
 
-def bundle_adjust_run_all_qc(ba_dir,img_dir,img_extension='8.tif'):
+# ASP FUNCTIONS
+def extract_tsai_coordinates(cam_dir, extension='.tsai'):
+    geometry = []
+    cam_files = sorted(glob.glob(os.path.join(cam_dir,'*'+extension)))
+    for filename in cam_files:
+        if filename.endswith(extension):
+            with open(filename) as f:
+                sub = 'C = '
+                lines = [line.rstrip('\n') for line in f]
+                coords = [s for s in lines if sub in s]
+                coords = coords[0].split()[-3:]
+                lon = float(coords[0])
+                lat = float(coords[1])
+                alt = float(coords[2])
+                geometry.append(Point(lon,lat,alt))
+    tsai_points = gpd.GeoDataFrame(crs={'init' :'epsg:4978'}, geometry=geometry)
+    tsai_points['file'] = [os.path.basename(x).split('.')[0] for x in cam_files]
+    return tsai_points
+
+def plot_tsai_camera_positions_before_and_after(ba_dir, 
+                                                input_cam_dir, 
+                                                extension='.tsai',
+                                                glacier_shape_fn=None,
+                                                out_dir='qc_plots/camera_positions'):
+    
+    # TODO
+    # Add if then flow to accomodate final.tsai camera models in
+    # bundle adjust directory.
+    # Add exception to increase extent until stamen tile can be
+    # retrieved, even when no glacier shape file provided.
+    
+    '''
+    
+    Function to plot camera positions in x, y, and z before and after
+    bundle adjustment.
+    
+    Note: if no glacier shape provided, extent may be insufficient to retrieve
+    a stamen tile using contextily.
+    
+    '''
+
+    out_dir_abs = create_dir(out_dir)
+                                                
+    positions_before_ba = extract_tsai_coordinates(input_cam_dir,
+                                        extension=extension)
+    positions_before_ba = positions_before_ba.to_crs({'init' :'epsg:3857'})
+    
+    positions_after_ba = extract_tsai_coordinates(ba_dir,
+                                        extension=extension)
+    positions_after_ba = positions_after_ba.to_crs({'init' :'epsg:3857'}) 
+    
+    extract_gpd_geometry(positions_before_ba)
+    extract_gpd_geometry(positions_after_ba)
+    
+    
+    
+    # Plot XY
+    fig, ax = plt.subplots(1,2,figsize=(20,10))
+    positions_before_ba.plot(column='z',
+                             ax=ax[0],
+                             cmap='viridis',
+                             legend=True, 
+                             edgecolor='k')
+    positions_after_ba.plot(column='z',
+                            ax=ax[1], 
+                            cmap='viridis',
+                            legend=True, 
+                            edgecolor='k')
+    if glacier_shape_fn:
+        glacier_shape = gpd.read_file(glacier_shape_fn)
+        glacier_shape = glacier_shape.to_crs({'init' :'epsg:3857'})
+        glacier_shape.plot(ax=ax[0],alpha=0.5)
+        glacier_shape.plot(ax=ax[1],alpha=0.5)
+        
+    ctx.add_basemap(ax[0])
+    ctx.add_basemap(ax[1])
+    
+    ax[0].set_title('camera positions before bundle adjust')
+    ax[1].set_title('camera positions after bundle adjust')
+    
+    out = os.path.join(out_dir_abs,
+                       'xy_camera_positions_before_and_after_bundle_adjust.png')
+    fig.savefig(out, bbox_inches = "tight")
+    plt.close()
+    
+    # Plot Z
+    fig, ax = plt.subplots(1,2,figsize=(20,10),
+                           sharey=True)
+    
+    ax[0].scatter(positions_before_ba['file'], 
+                  positions_before_ba['z'], 
+                  color='b')
+    ax[0].tick_params(labelrotation=90,axis='x')
+    ax[0].set_title('before bundle_adjust')
+    ax[0].set_xlabel('\nimage')
+    ax[0].set_ylabel('height above datum (m)')
+
+    ax[1].scatter(positions_after_ba['file'], 
+                  positions_after_ba['z'], 
+                  color='b')
+    ax[1].tick_params(labelrotation=90,axis='x')
+    ax[1].set_title('after bundle_adjust')
+    ax[1].set_xlabel('\nimage')
+    ax[1].set_ylabel('height above datum (m)')
+    
+    out = os.path.join(out_dir_abs,
+                       'z_camera_positions_before_and_after_bundle_adjust.png')
+    fig.savefig(out, bbox_inches = "tight")
+    plt.close()
+    
+def run_all_qc(ba_dir,
+               img_dir,
+               input_cam_dir,
+               img_extension='8.tif',
+               glacier_shape_fn=None):
     
     plot_ip_over_images(ba_dir,
                         img_dir, 
@@ -409,6 +508,11 @@ def bundle_adjust_run_all_qc(ba_dir,img_dir,img_extension='8.tif'):
                         img_extension=img_extension)
     
     plot_dxdy(ba_dir)
+    
     plot_residuals(ba_dir)
+    
+    plot_tsai_camera_positions_before_and_after(ba_dir,
+                                                input_cam_dir,
+                                                glacier_shape_fn=glacier_shape_fn)
                              
                              
