@@ -5,6 +5,7 @@ dependencies:
   - numpy
   - matplotlib
   - geopandas
+  - descartes
   - shapely
   - contextily
   - pip

@@ -19,13 +19,12 @@ Outputs
 
 ## TODO
 V0
-- add pip install
-- add environment yml
-- add examples notebook
+- cleanup examples notebook
+- put code into classes
 - update readme with description and guidelines
+- update version release notes
 
 V1
-- put code into classes
 - plot camera foot prints before and after bundle adjust
 - plot camera orientations before and after bundle adjust
 - create interactive html plots for residuals
@@ -34,6 +33,8 @@ V1
 ## DONE
 
 V0
+- add pip install
+- add environment yml
 - plot xy and z cam positions
 - plot interest points over images
 - plot match points over images
