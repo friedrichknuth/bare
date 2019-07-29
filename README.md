@@ -1,6 +1,6 @@
 # ASP Bundle Adjust Run Evaluation
 
-Python library to evaluate outputs from [NASA Ames Stereo Pipeline](https://ti.arc.nasa.gov/tech/asr/groups/intelligent-robotics/ngt/stereo/) bundle adjust runs. 
+Python library to evaluate outputs from [NASA Ames Stereo Pipeline](https://ti.arc.nasa.gov/tech/asr/groups/intelligent-robotics/ngt/stereo/) bundle adjust runs on Earth focused cameras. 
 
 
 ### Features
