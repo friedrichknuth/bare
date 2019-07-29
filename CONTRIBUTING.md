@@ -4,27 +4,20 @@ Functions should be organized and added to the following classes, following [PEP
 
 
 
+### Libraries and Classes
 
-
-### Classes
-
-#### BundleAdjustRunEvaluation
-
-File: `bare/bare.py`
-
+#### bare/bare.py
+`BundleAdjustRunEvaluation`  
 Main functions to plot and evaluate bundle adjust runs. Designed specifically to handle ASP outputs.
 
-#### Core
+#### bare/common.py
+`Basic`  
+Common basic os utilities and tools. Not ASP specific.
 
-File: `bare/core.py`
 
-Basic os utilities and tools. Not ASP specific.
-
-#### Geospatial
-
-File: `bare/geospatial.py`
-
-Basic geospatial data qrangling utilities and tools. Not ASP specific.
+#### bare/geospatial.py
+`Geospatial`  
+Basic geospatial data wrangling utilities and tools. Not ASP specific.
 
 
 
@@ -33,6 +26,7 @@ Basic geospatial data qrangling utilities and tools. Not ASP specific.
 
 ### TODO
 V0.1
+- change to generic example from ASP documentation
 - improve / add docstrings
 - add release tag
 
