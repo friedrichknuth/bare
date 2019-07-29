@@ -7,10 +7,10 @@ Functions should be organized and added to the following classes, following [PEP
 ### Libraries and Classes
 
 #### bare/bare.py
-`Core`
+`Core`  
 Functions to process bundle adjust outputs
 
-`Plot`
+`Plot`  
 Functions to plot bundle adjust products.
 
 #### bare/common.py
