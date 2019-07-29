@@ -1,6 +1,6 @@
 import os
 
-class BasicFunctions:
+class Core:
     
     @staticmethod
     def create_dir(directory):

@@ -9,8 +9,8 @@ from shapely.geometry import Point
 import contextily as ctx
 import matplotlib.pyplot as plt
 
-from asp_ba_eval import BasicFunctions
-from asp_ba_eval import Geospatial
+from bare import BasicFunctions
+from bare import Geospatial
 
 import warnings
 warnings.filterwarnings("ignore", message="Palette images with Transparency")
