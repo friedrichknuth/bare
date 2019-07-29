@@ -3,7 +3,11 @@
 Functions should be organized and added to the following classes, following [PEP8](http://www.python.org/dev/peps/pep-0008/) conventions.
 
 
+
+
+
 ### Classes
+
 #### BundleAdjustRunEvaluation
 
 File: `bare/bare.py`
@@ -21,6 +25,8 @@ Basic os utilities and tools. Not ASP specific.
 File: `bare/geospatial.py`
 
 Basic geospatial data qrangling utilities and tools. Not ASP specific.
+
+
 
 
 
