@@ -1,8 +1,4 @@
-# ASP Bundle Adjust Evaluation Tool
-What do I want this library to do?
-
-- Have the ability to import it as a library
-- Have a function that will take in the bundle adjust directory, as well as a directory with images, then write out images that show the distribution of match points and plots
+# ASP Bundle Adjust Run Evaluation Tool
 
 Inputs
 - bundle adjust directory
@@ -12,15 +8,14 @@ Inputs
 Outputs
 - plot of images with interest points
 - plot of images with match points
-- plot dxdy
+- plot disparity dxdy
 - plot showing xy and z camera positions before and after bundle adjustment
-- plot residuals
+- plot of camera triangulation residuals
 
 
 ## TODO
 V0
 - cleanup examples notebook
-- put code into classes
 - update readme with description and guidelines
 - update version release notes
 
@@ -33,6 +28,7 @@ V1
 ## DONE
 
 V0
+- put organize code into classes
 - add pip install
 - add environment yml
 - plot xy and z cam positions
