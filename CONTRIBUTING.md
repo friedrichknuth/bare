@@ -4,7 +4,7 @@ Functions should be organized and added to the following classes, following [PEP
 
 
 
-### Libraries and Classes
+### Libraries
 
 #### bare/bare.py
 `Core`  
