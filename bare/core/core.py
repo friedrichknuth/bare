@@ -52,7 +52,7 @@ def iter_ip_to_csv(ba_dir):
     vwips = sorted(glob.glob(ba_dir+"*.vwip"))
     ip_csv_list = []
     for filename in vwips:
-        fn = Core.write_ip_to_csv(filename)
+        fn = write_ip_to_csv(filename)
         ip_csv_list.append(fn)
     return ip_csv_list
     
@@ -72,7 +72,7 @@ def iter_mp_to_csv(ba_dir):
             sys.exit(1)
     match_csv_list = []
     for filename in matches:
-        fn = Core.write_mp_to_csv(filename)
+        fn = write_mp_to_csv(filename)
         match_csv_list.append(fn)
     return match_csv_list 
 
@@ -138,7 +138,7 @@ def write_ip_to_csv(filename):
     with open(filename, 'rb') as mf, open(filename_out, 'w') as out:
         size1 = np.frombuffer(mf.read(8), dtype=np.uint64)[0]
         out.write('x1 y1\n')
-        im1_ip = [Core.read_ip_record(mf) for i in range(size1)]
+        im1_ip = [read_ip_record(mf) for i in range(size1)]
         for i in range(len(im1_ip)):
             out.write('{} {}\n'.format(im1_ip[i][0], im1_ip[i][1]))
     return filename_out
@@ -151,8 +151,8 @@ def write_mp_to_csv(filename):
         size1 = np.frombuffer(mf.read(8), dtype=np.uint64)[0]
         size2 = np.frombuffer(mf.read(8), dtype=np.uint64)[0]
         out.write('x1 y1 x2 y2\n')
-        im1_ip = [Core.read_ip_record(mf) for i in range(size1)]
-        im2_ip = [Core.read_ip_record(mf) for i in range(size2)]
+        im1_ip = [read_ip_record(mf) for i in range(size1)]
+        im2_ip = [read_ip_record(mf) for i in range(size2)]
         for i in range(len(im1_ip)):
             out.write('{} {} {} {}\n'.format(im1_ip[i][0], 
                                              im1_ip[i][1], 

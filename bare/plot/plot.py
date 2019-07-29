@@ -328,21 +328,21 @@ def plot_all_qc_products(ba_dir,
                img_extension='8.tif',
                glacier_shape_fn=None):
 
-    Plot.plot_tsai_camera_positions_before_and_after(ba_dir,
+    plot_tsai_camera_positions_before_and_after(ba_dir,
                                                 input_cam_dir,
                                                 glacier_shape_fn=glacier_shape_fn)
 
-    Plot.plot_ip_over_images(ba_dir,
+    plot_ip_over_images(ba_dir,
                         img_dir, 
                         img_extension=img_extension)
                          
-    Plot.plot_mp_over_images(ba_dir, 
+    plot_mp_over_images(ba_dir, 
                         img_dir, 
                         img_extension=img_extension)
 
-    Plot.plot_dxdy(ba_dir)
+    plot_dxdy(ba_dir)
 
-    Plot.plot_residuals(ba_dir)
+    plot_residuals(ba_dir)
     
 
                              
