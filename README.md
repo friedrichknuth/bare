@@ -18,7 +18,8 @@ See [notebooks](./examples/) for examples on how to use the library.
 ### Installation from source
 ```
 $ git clone https://github.com/friedrichknuth/bare.git
-$ pip install -e bare
+$ cd ./bare
+$ pip install -e .
 ```
 
 ### Contributing
