@@ -11,4 +11,4 @@ dependencies:
   - pip
   - pip:
     - gdal
-  # - "--editable=git+https://github.com/friedrichknuth/asp_ba_eval.git#egg=asp_ba_eval"
+  # - "--editable=git+https://github.com/friedrichknuth/bare.git#egg=bare"

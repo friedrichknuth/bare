@@ -9,7 +9,7 @@ from shapely.geometry import Point
 import contextily as ctx
 import matplotlib.pyplot as plt
 
-from bare import BasicFunctions
+from bare import Common
 from bare import Geospatial
 
 import warnings
@@ -19,24 +19,41 @@ warnings.filterwarnings("ignore", message="Palette images with Transparency")
 
 #TODO
 '''
-- break class into plotting and wrangling classes
 - write converted csv files to a seperate folder
 - hide functions with preceeding _ from inheritance
 - add docstrings to functions
 - need to handle numpass 0 when no clean.match file is created to parse matched 
   images from match file file name.
+- find better way to parse image file names from match file. 
+  currently will break if - character in image file name.
 '''
 
 
-
-class BundleAdjustRunEvaluation:
-    
+class Core:
+    def extract_tsai_coordinates(cam_dir, extension='.tsai'):
+        geometry = []
+        cam_files = sorted(glob.glob(os.path.join(cam_dir,'*'+extension)))
+        for filename in cam_files:
+            if filename.endswith(extension):
+                with open(filename) as f:
+                    sub = 'C = '
+                    lines = [line.rstrip('\n') for line in f]
+                    coords = [s for s in lines if sub in s]
+                    coords = coords[0].split()[-3:]
+                    lon = float(coords[0])
+                    lat = float(coords[1])
+                    alt = float(coords[2])
+                    geometry.append(Point(lon,lat,alt))
+        tsai_points = gpd.GeoDataFrame(crs={'init' :'epsg:4978'}, geometry=geometry)
+        tsai_points['file'] = [os.path.basename(x).split('.')[0] for x in cam_files]
+        return tsai_points
+           
     def iter_ip_to_csv(ba_dir):
     #     print('converting interest point files (vwip) to csv...')
         vwips = sorted(glob.glob(ba_dir+"*.vwip"))
         ip_csv_list = []
         for filename in vwips:
-            fn = BundleAdjustRunEvaluation.write_ip_to_csv(filename)
+            fn = Core.write_ip_to_csv(filename)
             ip_csv_list.append(fn)
         return ip_csv_list
         
@@ -56,11 +73,13 @@ class BundleAdjustRunEvaluation:
                 sys.exit(1)
         match_csv_list = []
         for filename in matches:
-            fn = BundleAdjustRunEvaluation.write_mp_to_csv(filename)
+            fn = Core.write_mp_to_csv(filename)
             match_csv_list.append(fn)
-        return match_csv_list
-        
+        return match_csv_list 
 
+
+        
+     
     def parse_image_names_from_match_file_name(match_file, img_list):
         '''
     
@@ -87,7 +106,18 @@ class BundleAdjustRunEvaluation:
         img2_file_name = os.path.join(img_base_path, match_img2_name+img_ext)
     
         return img1_file_name, img2_file_name , match_img1_name, match_img2_name
-
+        
+    def ba_pointmap_to_gdf(df):
+        df = df.rename(columns={'# lon':'lon',
+                                ' lat':'lat',
+                                ' height_above_datum':'height_above_datum',
+                                ' mean_residual':'mean_residual'})
+        geometry = [Point(xy) for xy in zip(df['lon'], df['lat'])] 
+        gdf = gpd.GeoDataFrame(df,geometry=geometry,crs={'init':'epsg:4326'})
+        gdf = gdf.to_crs({'init':'epsg:3857'})
+        gdf = gdf.sort_values('mean_residual',ascending=True)
+        return gdf
+        
     def read_ip_record(mf):
         x, y = np.frombuffer(mf.read(8), dtype=np.float32)
         xi, yi = np.frombuffer(mf.read(8), dtype=np.int32)
@@ -109,7 +139,7 @@ class BundleAdjustRunEvaluation:
         with open(filename, 'rb') as mf, open(filename_out, 'w') as out:
             size1 = np.frombuffer(mf.read(8), dtype=np.uint64)[0]
             out.write('x1 y1\n')
-            im1_ip = [BundleAdjustRunEvaluation.read_ip_record(mf) for i in range(size1)]
+            im1_ip = [Core.read_ip_record(mf) for i in range(size1)]
             for i in range(len(im1_ip)):
                 out.write('{} {}\n'.format(im1_ip[i][0], im1_ip[i][1]))
         return filename_out
@@ -122,14 +152,16 @@ class BundleAdjustRunEvaluation:
             size1 = np.frombuffer(mf.read(8), dtype=np.uint64)[0]
             size2 = np.frombuffer(mf.read(8), dtype=np.uint64)[0]
             out.write('x1 y1 x2 y2\n')
-            im1_ip = [BundleAdjustRunEvaluation.read_ip_record(mf) for i in range(size1)]
-            im2_ip = [BundleAdjustRunEvaluation.read_ip_record(mf) for i in range(size2)]
+            im1_ip = [Core.read_ip_record(mf) for i in range(size1)]
+            im2_ip = [Core.read_ip_record(mf) for i in range(size2)]
             for i in range(len(im1_ip)):
                 out.write('{} {} {} {}\n'.format(im1_ip[i][0], 
                                                  im1_ip[i][1], 
                                                  im2_ip[i][0], 
                                                  im2_ip[i][1]))
-        return filename_out
+        return filename_out        
+         
+class Plot:
 
     def plot_ip_over_images(ba_dir, 
                             img_dir, 
@@ -148,10 +180,10 @@ class BundleAdjustRunEvaluation:
         print('plotting interest points over images...')
     
         # create output directory
-        out_dir_abs = BasicFunctions.create_dir(out_dir)
+        out_dir_abs = Common.create_dir(out_dir)
     
         # convert interest points in binary vwip files to csv.
-        ip_csv_list = BundleAdjustRunEvaluation.iter_ip_to_csv(ba_dir)
+        ip_csv_list = Core.iter_ip_to_csv(ba_dir)
     
         # get images list
         img_list = sorted(glob.glob(img_dir+'*'+img_extension))
@@ -216,16 +248,16 @@ class BundleAdjustRunEvaluation:
         print('plotting match points over images...')
     
         # create output directory
-        out_dir_abs = BasicFunctions.create_dir(out_dir)
+        out_dir_abs = Common.create_dir(out_dir)
     
         # convert .match files to csv
-        match_csv_list = BundleAdjustRunEvaluation.iter_mp_to_csv(ba_dir)
+        match_csv_list = Core.iter_mp_to_csv(ba_dir)
     
         # get images list
         img_list = sorted(glob.glob(img_dir+'*'+img_extension))
 
         for i,v in enumerate(match_csv_list):
-            tmp = BundleAdjustRunEvaluation.parse_image_names_from_match_file_name(v,img_list)
+            tmp = Core.parse_image_names_from_match_file_name(v,img_list)
             img1_file_name= tmp[0]
             img2_file_name = tmp[1]
             match_img1_name= tmp[2]
@@ -263,9 +295,9 @@ class BundleAdjustRunEvaluation:
         print('plotting dxdy...')
     
         # create output directory
-        out_dir_abs = BasicFunctions.create_dir(out_dir)
+        out_dir_abs = Common.create_dir(out_dir)
     
-        match_csv_list = BundleAdjustRunEvaluation.iter_mp_to_csv(ba_dir)
+        match_csv_list = Core.iter_mp_to_csv(ba_dir)
     
         for i,v in enumerate(match_csv_list):
         
@@ -284,18 +316,6 @@ class BundleAdjustRunEvaluation:
             out = os.path.join(out_dir_abs,img_match_names+'_dxdy_plot.png')
             fig.savefig(out, bbox_inches = "tight")
             plt.close()
-        
-        
-    def ba_pointmap_to_gdf(df):
-        df = df.rename(columns={'# lon':'lon',
-                                ' lat':'lat',
-                                ' height_above_datum':'height_above_datum',
-                                ' mean_residual':'mean_residual'})
-        geometry = [Point(xy) for xy in zip(df['lon'], df['lat'])] 
-        gdf = gpd.GeoDataFrame(df,geometry=geometry,crs={'init':'epsg:4326'})
-        gdf = gdf.to_crs({'init':'epsg:3857'})
-        gdf = gdf.sort_values('mean_residual',ascending=True)
-        return gdf
 
 
     def plot_residuals(ba_dir, 
@@ -312,7 +332,7 @@ class BundleAdjustRunEvaluation:
     
         print('plotting residuals before and after bundle adjustment...')
     
-        out_dir_abs = BasicFunctions.create_dir(out_dir)
+        out_dir_abs = Common.create_dir(out_dir)
     
         initial_point_map_csv_fn = glob.glob(os.path.join(ba_dir,
                                                           '*initial_*_pointmap*'))[0]
@@ -320,8 +340,8 @@ class BundleAdjustRunEvaluation:
                                                         '*final_*_pointmap*'))[0]
         initial_df = pd.read_csv(initial_point_map_csv_fn,skiprows=[1, 1])
         final_df = pd.read_csv(final_point_map_csv_fn,skiprows=[1, 1])
-        initial_gdf = BundleAdjustRunEvaluation.ba_pointmap_to_gdf(initial_df)
-        final_gdf = BundleAdjustRunEvaluation.ba_pointmap_to_gdf(final_df)
+        initial_gdf = Core.ba_pointmap_to_gdf(initial_df)
+        final_gdf = Core.ba_pointmap_to_gdf(final_df)
     
         fig, ax = plt.subplots(1,2,figsize=(20,10))
         clim = np.percentile(initial_gdf['mean_residual'].values,(2,98))
@@ -355,25 +375,6 @@ class BundleAdjustRunEvaluation:
         out = os.path.join(out_dir_abs,'residuals_before_and_after.png')
         fig.savefig(out, bbox_inches = "tight")
         plt.close()
-    
-
-    def extract_tsai_coordinates(cam_dir, extension='.tsai'):
-        geometry = []
-        cam_files = sorted(glob.glob(os.path.join(cam_dir,'*'+extension)))
-        for filename in cam_files:
-            if filename.endswith(extension):
-                with open(filename) as f:
-                    sub = 'C = '
-                    lines = [line.rstrip('\n') for line in f]
-                    coords = [s for s in lines if sub in s]
-                    coords = coords[0].split()[-3:]
-                    lon = float(coords[0])
-                    lat = float(coords[1])
-                    alt = float(coords[2])
-                    geometry.append(Point(lon,lat,alt))
-        tsai_points = gpd.GeoDataFrame(crs={'init' :'epsg:4978'}, geometry=geometry)
-        tsai_points['file'] = [os.path.basename(x).split('.')[0] for x in cam_files]
-        return tsai_points
 
     def plot_tsai_camera_positions_before_and_after(ba_dir,
                                                     input_cam_dir, 
@@ -396,14 +397,15 @@ class BundleAdjustRunEvaluation:
         a stamen tile using contextily.
     
         '''
+        print('plotting tsai camera positions before and after bundle adjustment...')
 
-        out_dir_abs = BasicFunctions.create_dir(out_dir)
+        out_dir_abs = Common.create_dir(out_dir)
                                                 
-        positions_before_ba = BundleAdjustRunEvaluation.extract_tsai_coordinates(input_cam_dir,
+        positions_before_ba = Core.extract_tsai_coordinates(input_cam_dir,
                                             extension=extension)
         positions_before_ba = positions_before_ba.to_crs({'init' :'epsg:3857'})
     
-        positions_after_ba = BundleAdjustRunEvaluation.extract_tsai_coordinates(ba_dir,
+        positions_after_ba = Core.extract_tsai_coordinates(ba_dir,
                                             extension=extension)
         positions_after_ba = positions_after_ba.to_crs({'init' :'epsg:3857'}) 
     
@@ -433,8 +435,8 @@ class BundleAdjustRunEvaluation:
         ctx.add_basemap(ax[0])
         ctx.add_basemap(ax[1])
     
-        ax[0].set_title('camera positions before bundle adjust')
-        ax[1].set_title('camera positions after bundle adjust')
+        ax[0].set_title('xy camera positions before bundle adjust')
+        ax[1].set_title('xy camera positions after bundle adjust')
     
         out = os.path.join(out_dir_abs,
                            'xy_camera_positions_before_and_after_bundle_adjust.png')
@@ -449,7 +451,7 @@ class BundleAdjustRunEvaluation:
                       positions_before_ba['z'], 
                       color='b')
         ax[0].tick_params(labelrotation=90,axis='x')
-        ax[0].set_title('before bundle_adjust')
+        ax[0].set_title('z position before bundle_adjust')
         ax[0].set_xlabel('\nimage')
         ax[0].set_ylabel('height above datum (m)')
 
@@ -457,7 +459,7 @@ class BundleAdjustRunEvaluation:
                       positions_after_ba['z'], 
                       color='b')
         ax[1].tick_params(labelrotation=90,axis='x')
-        ax[1].set_title('after bundle_adjust')
+        ax[1].set_title('z position after bundle_adjust')
         ax[1].set_xlabel('\nimage')
         ax[1].set_ylabel('height above datum (m)')
     
@@ -466,26 +468,28 @@ class BundleAdjustRunEvaluation:
         fig.savefig(out, bbox_inches = "tight")
         plt.close()
     
-    def run_all_qc(ba_dir,
+    def plot_all_qc_products(ba_dir,
                    img_dir,
                    input_cam_dir,
                    img_extension='8.tif',
                    glacier_shape_fn=None):
     
-        BundleAdjustRunEvaluation.plot_ip_over_images(ba_dir,
+        Plot.plot_tsai_camera_positions_before_and_after(ba_dir,
+                                                    input_cam_dir,
+                                                    glacier_shape_fn=glacier_shape_fn)
+
+        Plot.plot_ip_over_images(ba_dir,
                             img_dir, 
                             img_extension=img_extension)
                              
-        BundleAdjustRunEvaluation.plot_mp_over_images(ba_dir, 
+        Plot.plot_mp_over_images(ba_dir, 
                             img_dir, 
                             img_extension=img_extension)
     
-        BundleAdjustRunEvaluation.plot_dxdy(ba_dir)
+        Plot.plot_dxdy(ba_dir)
     
-        BundleAdjustRunEvaluation.plot_residuals(ba_dir)
+        Plot.plot_residuals(ba_dir)
     
-        BundleAdjustRunEvaluation.plot_tsai_camera_positions_before_and_after(ba_dir,
-                                                    input_cam_dir,
-                                                    glacier_shape_fn=glacier_shape_fn)
+
                              
                              
