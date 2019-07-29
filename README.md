@@ -23,9 +23,9 @@ $ pip install -e bare
 
 ### Contributing
 
-_bare_ contains modular classes that can be expanded upon to accomodate additional camera model formats, as well as quality control products. Currently, the library only accomodates tsai camera model inputs.
+_bare_ contains modular classes that can accomodate additional quality control products, as well as camera model formats. Currently, the library only accomodates tsai camera model inputs.
 
-For contribution guidelines and the current TODO list, please click [here](./CONTRIBUTING.md).
+For contribution guidelines and the active TODO list, please click [here](./CONTRIBUTING.md).
 
 ### Licence
 MIT License Copyright (c) 2019 Friedrich Knuth
