@@ -40,7 +40,7 @@ def plot_ip_over_images(ba_dir,
     ip_csv_list = bare.core.iter_ip_to_csv(ba_dir)
 
     # get images list
-    img_list = sorted(glob.glob(img_dir+'*'+img_extension))
+    img_list = sorted(glob.glob(os.path.join(img_dir, '*'+img_extension)))
 
     # check if img_list and ip_csv_list same length
     if not len(ip_csv_list) == len(img_list):
@@ -108,41 +108,74 @@ def plot_mp_over_images(ba_dir,
     match_csv_list = bare.core.iter_mp_to_csv(ba_dir)
 
     # get images list
-    img_list = sorted(glob.glob(img_dir+'*'+img_extension))
+    img_list = sorted(glob.glob(os.path.join(img_dir, '*'+img_extension)))
 
-    for i,v in enumerate(match_csv_list):
-        tmp = bare.core.parse_image_names_from_match_file_name(v,img_list)
-        img1_file_name= tmp[0]
-        img2_file_name = tmp[1]
-        match_img1_name= tmp[2]
-        match_img2_name = tmp[3]
+    for match_csv_fn in match_csv_list:
+        #TODO: This needs work
+        img1_fn, img2_fn, match_img1_fn, match_img2_fn = \
+                bare.core.parse_image_names_from_match_file_name(match_csv_fn,img_list)
+        mp_plot(img1_fn, img2_fn, match_csv_fn, out_dir_abs)
 
-        df = pd.read_csv(v, delimiter=r"\s+")
-    
-        img1 = gdal.Open(img1_file_name)
-        img1 = np.array(img1.ReadAsArray())        
+def mp_plot(img1_fn, img2_fn, match_csv_fn, out_dir_abs=None, scale=1.0):
+        """
+        Helper function to generate plots fro two images and match csv
+        """
 
-        img2 = gdal.Open(img2_file_name)
-        img2 = np.array(img2.ReadAsArray()) 
+        #Load match file into DataFrame
+        df = pd.read_csv(match_csv_fn, delimiter=r"\s+")
+        
+        #Extract short filenames 
+        match_img1_name = os.path.splitext(os.path.split(img1_fn)[-1])[0]
+        match_img2_name = os.path.splitext(os.path.split(img1_fn)[-1])[0]
     
-    
-        fig, ax = plt.subplots(1,2,figsize=(20,10))
-        fig.suptitle('match points\n'+ 
-                     match_img1_name +' and '+
-                     match_img2_name)
-    
+        fig, ax = plt.subplots(1,2,figsize=(10,6))
+        fig.suptitle('Match points:\n%s' % os.path.split(match_csv_fn)[-1])
+
+        buf_xsize = None
+        buf_ysize = None
+
+        img1_ds = gdal.Open(img1_fn)
+
+        #Handle scaling of input images using ReadAsArray buffer sizes
+        if scale > 1:
+            buf_xsize = int(round(img1_ds.RasterXSize/scale))
+            buf_ysize = int(round(img1_ds.RasterYSize/scale))
+            df['x1'] /= scale
+            df['y1'] /= scale
+
+        img1 = img1_ds.ReadAsArray(buf_xsize=buf_xsize, buf_ysize=buf_ysize)
+        clim = np.percentile(img1, (2,98))
         ax[0].scatter(df['x1'],df['y1'],color='r',marker='o',facecolor='none',s=10)
-        ax[0].imshow(img1,cmap='gray')
-        ax[0].set_title(match_img1_name)
-    
+        ax[0].imshow(img1, clim=clim, cmap='gray')
+        #ax[0].set_title(img1_fn)
+        ax[0].set_aspect('equal')
+        img1 = None
+        img1_ds = None
+
+        img2_ds = gdal.Open(img2_fn)
+        if scale > 1:
+            buf_xsize = int(round(img2_ds.RasterXSize/scale))
+            buf_ysize = int(round(img2_ds.RasterYSize/scale))
+            df['x2'] /= scale
+            df['y2'] /= scale
+
+        img2 = img2_ds.ReadAsArray(buf_xsize=buf_xsize, buf_ysize=buf_ysize)
+        clim = np.percentile(img2, (2,98))
         ax[1].scatter(df['x2'],df['y2'],color='r',marker='o',facecolor='none',s=10)
-        ax[1].imshow(img2,cmap='gray')
-        ax[1].set_title(match_img2_name)
-    
-        out = os.path.join(out_dir_abs,
-                           match_img1_name + '__' + match_img2_name+'_match_points.png')
-        fig.savefig(out, bbox_inches = "tight")
-        plt.close()
+        ax[1].imshow(img2, clim=clim, cmap='gray')
+        #ax[1].set_title(img2_fn)
+        ax[1].set_aspect('equal')
+        img2 = None
+        img2_ds = None
+  
+        plt.tight_layout()
+
+        if out_dir_abs is not None:
+            out = os.path.join(out_dir_abs, match_img1_name + '__' + match_img2_name+'_match_points.png')
+            fig.savefig(out, bbox_inches = "tight")
+            plt.close()
+        else:
+            plt.show()
       
 def plot_dxdy(ba_dir, out_dir='qc_plots/dxdy'):
 
