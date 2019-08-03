@@ -64,7 +64,7 @@ def iter_mp_to_csv(ba_dir):
         print('    processing clean.match files only.')
     else:
         print('    no clean.match files found.')
-        matches = sorted(glob.glob(ba_dir+"*.match"))
+        matches = sorted(glob.glob(os.path.join(ba_dir,‘*.match’))
         if matches:
             print('    processing .match files.')
         else:
