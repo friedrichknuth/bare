@@ -49,7 +49,7 @@ def extract_tsai_coordinates(cam_dir, extension='.tsai'):
        
 def iter_ip_to_csv(ba_dir):
 #     print('converting interest point files (vwip) to csv...')
-    vwips = sorted(glob.glob(ba_dir+"*.vwip"))
+    vwips = sorted(glob.glob(os.path.join(ba_dir,"*.vwip")))
     ip_csv_list = []
     for filename in vwips:
         fn = write_ip_to_csv(filename)
@@ -59,12 +59,12 @@ def iter_ip_to_csv(ba_dir):
 
 def iter_mp_to_csv(ba_dir):
 #     print('converting match point files to csv...')
-    matches = sorted(glob.glob(ba_dir+"*clean.match"))
+    matches = sorted(glob.glob(os.path.join(ba_dir, "*clean.match")))
     if matches:
         print('    processing clean.match files only.')
     else:
         print('    no clean.match files found.')
-        matches = sorted(glob.glob(os.path.join(ba_dir,‘*.match’))
+        matches = sorted(glob.glob(os.path.join(ba_dir, "*.match")))
         if matches:
             print('    processing .match files.')
         else:
@@ -76,9 +76,6 @@ def iter_mp_to_csv(ba_dir):
         match_csv_list.append(fn)
     return match_csv_list 
 
-
-    
- 
 def parse_image_names_from_match_file_name(match_file, img_list):
     '''
 
@@ -104,7 +101,7 @@ def parse_image_names_from_match_file_name(match_file, img_list):
     match_img2_name = os.path.basename(match_file).split('.')[0].split('-')[-2].split('__')[1]
     img2_file_name = os.path.join(img_base_path, match_img2_name+img_ext)
 
-    return img1_file_name, img2_file_name , match_img1_name, match_img2_name
+    return img1_file_name, img2_file_name, match_img1_name, match_img2_name
     
 def ba_pointmap_to_gdf(df):
     df = df.rename(columns={'# lon':'lon',
