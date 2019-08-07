@@ -126,7 +126,7 @@ def mp_plot(img1_fn, img2_fn, match_csv_fn, out_dir_abs=None, scale=1.0):
         
         #Extract short filenames 
         match_img1_name = os.path.splitext(os.path.split(img1_fn)[-1])[0]
-        match_img2_name = os.path.splitext(os.path.split(img1_fn)[-1])[0]
+        match_img2_name = os.path.splitext(os.path.split(img2_fn)[-1])[0]
     
         fig, ax = plt.subplots(1,2,figsize=(10,6))
         fig.suptitle('Match points:\n%s' % os.path.split(match_csv_fn)[-1])
