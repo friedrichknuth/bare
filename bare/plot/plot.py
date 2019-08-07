@@ -19,16 +19,14 @@ warnings.filterwarnings("ignore", message="Palette images with Transparency")
 
 def plot_ip_over_images(ba_dir, 
                         img_dir, 
-                        img_extension='.tif', 
+                        img_extension='.tif',
+                        scale=1.0, 
                         out_dir='qc_plots/interest_points'):
 
     '''
-
     Function to visualize interest points in an image.
-
     All images ending in img_extension pattern will be used. 
     For example, img_extension can be '.tif' or '8.tif'
-
     '''
 
     print('plotting interest points over images...')
@@ -38,67 +36,72 @@ def plot_ip_over_images(ba_dir,
 
     # convert interest points in binary vwip files to csv.
     ip_csv_list = bare.core.iter_ip_to_csv(ba_dir)
-
-    # get images list
-    img_list = sorted(glob.glob(os.path.join(img_dir, '*'+img_extension)))
-
-    # check if img_list and ip_csv_list same length
-    if not len(ip_csv_list) == len(img_list):
-        print(
-            '''
-            Length of interest point file list and image file list
-            does not match. Check inputs. 
+    
+    for ip_csv_fn in ip_csv_list:
         
-            TODO note: Need to implement exception to proceed with 
-            corresponding files and list omissions.
-            '''
-        )
-        sys.exit(1)
+        img_file_name, ip_csv_fn = bare.core.parse_image_name_from_ip_file_name(ip_csv_fn, img_dir, img_extension)
+        
+        ip_plot(img_file_name, ip_csv_fn, out_dir_abs, scale=scale)
 
-    # plot interest points over images
-    for i,v in enumerate(ip_csv_list):
-        img_base_name = os.path.basename(img_list[i]).split('.')[0]
+def ip_plot(img_file_name, ip_csv_fn, out_dir_abs=None, scale=1.0):
     
-        img = gdal.Open(img_list[i])
-        img = np.array(img.ReadAsArray())
+    img_base_name = os.path.splitext(os.path.split(img_file_name)[-1])[0]
+    print(img_base_name)
     
-        df = pd.read_csv(v, delimiter=r"\s+")
-        fig, ax = plt.subplots(1,figsize=(10,10))
-        ax.scatter(df['x1'],df['y1'],
-                   color='r',
-                   marker='o',
-                   facecolor='none',
-                   s=10)
-        ax.imshow(img,cmap='gray')
-        ax.set_title('interest points\n'+
-                     img_base_name+img_extension.split('.')[-1])
+    # Load interest points
+    df = pd.read_csv(ip_csv_fn, delimiter=r"\s+")
+
+    # Read in image data and scale accordingly
+    img_ds = gdal.Open(img_file_name)
+    buf_xsize = None
+    buf_ysize = None
+    if scale > 1:
+        buf_xsize = int(round(img_ds.RasterXSize/scale))
+        buf_ysize = int(round(img_ds.RasterYSize/scale))
+        df['x1'] /= scale
+        df['y1'] /= scale
+    img = img_ds.ReadAsArray(buf_xsize=buf_xsize, buf_ysize=buf_ysize)
+
+    # Plot the data
+    fig, ax = plt.subplots(1,figsize=(10,10))
+    clim = np.percentile(img, (2,98))
     
-        out = os.path.join(out_dir_abs,
-                           img_base_name+'_interest_points.png')
+    ax.scatter(df['x1'],df['y1'],
+               color='r',
+               marker='o',
+               facecolor='none',
+               s=10)
+    ax.imshow(img, clim=clim, cmap='gray')
+    ax.set_aspect('equal')
+    ax.set_title('interest points\n'+ img_base_name)
+    plt.tight_layout()
+    
+    # Visualize or write to file if out_dir_abs provided
+    if out_dir_abs is not None:
+        out = os.path.join(out_dir_abs, img_base_name+'_interest_points.png')
         fig.savefig(out, bbox_inches = "tight")
         plt.close()
+    else:
+        plt.show()
+        
+    # Drop image data from memory
+    img = None
+    img_ds = None
 
 def plot_mp_over_images(ba_dir, 
                         img_dir, 
                         img_extension='.tif', 
+                        scale=1.0,
                         out_dir='qc_plots/match_points'): 
 
     '''
-
     Function to visualize match points found between two images.
-
+                        
     All images ending in pattern and contained in img_dir  
     will be extracted. For example, img_extension can be 
     '.tif' or '8.tif'
-
-    Image names cannot have a '-' character in them, else
-    the images for a given match file won't be extracted properly.
-
-    TODO note: need cleaner way to extract image file paths that belong
-    to a .match file.
-
     '''
-
+                        
     print('plotting match points over images...')
 
     # create output directory
@@ -108,75 +111,75 @@ def plot_mp_over_images(ba_dir,
     match_csv_list = bare.core.iter_mp_to_csv(ba_dir)
 
     # get images list
-    img_list = sorted(glob.glob(os.path.join(img_dir, '*'+img_extension)))
-
     for match_csv_fn in match_csv_list:
-        #TODO: This needs work
-        img1_fn, img2_fn, match_img1_fn, match_img2_fn = \
-                bare.core.parse_image_names_from_match_file_name(match_csv_fn,img_list)
-        mp_plot(img1_fn, img2_fn, match_csv_fn, out_dir_abs)
+        
+        # extract image pairs
+        img1_file_name, img2_file_name = \
+                bare.core.parse_image_names_from_match_file_name(match_csv_fn, img_dir, img_extension)
+                
+        mp_plot(img1_file_name, img2_file_name, match_csv_fn, out_dir_abs, scale=scale)
 
 def mp_plot(img1_fn, img2_fn, match_csv_fn, out_dir_abs=None, scale=1.0):
-        """
-        Helper function to generate plots fro two images and match csv
-        """
+    '''
+    Function to generate plots fro two images and their corresponding match csv.
+    '''
 
-        #Load match file into DataFrame
-        df = pd.read_csv(match_csv_fn, delimiter=r"\s+")
-        
-        #Extract short filenames 
-        match_img1_name = os.path.splitext(os.path.split(img1_fn)[-1])[0]
-        match_img2_name = os.path.splitext(os.path.split(img2_fn)[-1])[0]
+    #Load match file into DataFrame
+    df = pd.read_csv(match_csv_fn, delimiter=r"\s+")
     
-        fig, ax = plt.subplots(1,2,figsize=(10,6))
-        fig.suptitle('Match points:\n%s' % os.path.split(match_csv_fn)[-1])
+    #Extract short filenames 
+    match_img1_name = os.path.splitext(os.path.split(img1_fn)[-1])[0]
+    match_img2_name = os.path.splitext(os.path.split(img2_fn)[-1])[0]
 
-        buf_xsize = None
-        buf_ysize = None
+    fig, ax = plt.subplots(1,2,figsize=(10,6))
+    fig.suptitle('Match points:\n%s' % os.path.split(match_csv_fn)[-1])
 
-        img1_ds = gdal.Open(img1_fn)
+    buf_xsize = None
+    buf_ysize = None
 
-        #Handle scaling of input images using ReadAsArray buffer sizes
-        if scale > 1:
-            buf_xsize = int(round(img1_ds.RasterXSize/scale))
-            buf_ysize = int(round(img1_ds.RasterYSize/scale))
-            df['x1'] /= scale
-            df['y1'] /= scale
+    img1_ds = gdal.Open(img1_fn)
 
-        img1 = img1_ds.ReadAsArray(buf_xsize=buf_xsize, buf_ysize=buf_ysize)
-        clim = np.percentile(img1, (2,98))
-        ax[0].scatter(df['x1'],df['y1'],color='r',marker='o',facecolor='none',s=10)
-        ax[0].imshow(img1, clim=clim, cmap='gray')
-        #ax[0].set_title(img1_fn)
-        ax[0].set_aspect('equal')
-        img1 = None
-        img1_ds = None
+    #Handle scaling of input images using ReadAsArray buffer sizes
+    if scale > 1:
+        buf_xsize = int(round(img1_ds.RasterXSize/scale))
+        buf_ysize = int(round(img1_ds.RasterYSize/scale))
+        df['x1'] /= scale
+        df['y1'] /= scale
 
-        img2_ds = gdal.Open(img2_fn)
-        if scale > 1:
-            buf_xsize = int(round(img2_ds.RasterXSize/scale))
-            buf_ysize = int(round(img2_ds.RasterYSize/scale))
-            df['x2'] /= scale
-            df['y2'] /= scale
+    img1 = img1_ds.ReadAsArray(buf_xsize=buf_xsize, buf_ysize=buf_ysize)
+    clim = np.percentile(img1, (2,98))
+    ax[0].scatter(df['x1'], df['y1'], color='r', marker='o', facecolor='none', s=10)
+    ax[0].imshow(img1, clim=clim, cmap='gray')
+    #ax[0].set_title(img1_fn)
+    ax[0].set_aspect('equal')
+    img1 = None
+    img1_ds = None
 
-        img2 = img2_ds.ReadAsArray(buf_xsize=buf_xsize, buf_ysize=buf_ysize)
-        clim = np.percentile(img2, (2,98))
-        ax[1].scatter(df['x2'],df['y2'],color='r',marker='o',facecolor='none',s=10)
-        ax[1].imshow(img2, clim=clim, cmap='gray')
-        #ax[1].set_title(img2_fn)
-        ax[1].set_aspect('equal')
-        img2 = None
-        img2_ds = None
+    img2_ds = gdal.Open(img2_fn)
+    if scale > 1:
+        buf_xsize = int(round(img2_ds.RasterXSize/scale))
+        buf_ysize = int(round(img2_ds.RasterYSize/scale))
+        df['x2'] /= scale
+        df['y2'] /= scale
+
+    img2 = img2_ds.ReadAsArray(buf_xsize=buf_xsize, buf_ysize=buf_ysize)
+    clim = np.percentile(img2, (2,98))
+    ax[1].scatter(df['x2'],df['y2'],color='r',marker='o',facecolor='none',s=10)
+    ax[1].imshow(img2, clim=clim, cmap='gray')
+    #ax[1].set_title(img2_fn)
+    ax[1].set_aspect('equal')
+    img2 = None
+    img2_ds = None
+
+    plt.tight_layout()
+
+    if out_dir_abs is not None:
+        out = os.path.join(out_dir_abs, match_img1_name + '__' + match_img2_name+'_match_points.png')
+        fig.savefig(out, bbox_inches = "tight")
+        plt.close()
+    else:
+        plt.show()
   
-        plt.tight_layout()
-
-        if out_dir_abs is not None:
-            out = os.path.join(out_dir_abs, match_img1_name + '__' + match_img2_name+'_match_points.png')
-            fig.savefig(out, bbox_inches = "tight")
-            plt.close()
-        else:
-            plt.show()
-      
 def plot_dxdy(ba_dir, out_dir='qc_plots/dxdy'):
 
     print('plotting dxdy...')
@@ -187,7 +190,7 @@ def plot_dxdy(ba_dir, out_dir='qc_plots/dxdy'):
     match_csv_list = bare.core.iter_mp_to_csv(ba_dir)
 
     for i,v in enumerate(match_csv_list):
-    
+        
         df = pd.read_csv(v, delimiter=r"\s+")
     
         df['dx'] = df['x2'] - df['x1']

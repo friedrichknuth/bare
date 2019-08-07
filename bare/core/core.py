@@ -76,32 +76,44 @@ def iter_mp_to_csv(ba_dir):
         match_csv_list.append(fn)
     return match_csv_list 
 
-def parse_image_names_from_match_file_name(match_file, img_list):
+def parse_image_names_from_match_file_name(match_file, img_dir, img_extension):
     '''
-
     Function to parse out image file names from match files.
     Image file names cannot have '-' in them, else this will break.
-
     '''
 
-    # Get image extension and image base path
-    img_ext = '.' + os.path.basename(img_list[0]).split('.')[-1]
-    img_base_path = os.path.dirname(img_list[0])
+    # Get image extension in case extension prefix used (e.g. 8.tif)
+    img_ext = '.' + img_extension.split('.')[-1]
 
     # Extract image pair file names from ASP match file name
     # For example e.g. split ../run-v2_sub8__v3_sub8-clean.csv 
     # into v2_sub8 and v3_sub8.
-    # Image names cannot have a '-' in them else this will break.
-    # Needs better solution.
+    # TODO Need cleaner way to extract image file paths that belong
+    # to a .match file. Image names cannot have a '-' in them else this will break.
     # Need to handle numpass 0 when no clean.match file is created.
-
     match_img1_name = os.path.basename(match_file).split('.')[0].split('-')[-2].split('__')[0]
-    img1_file_name = os.path.join(img_base_path, match_img1_name+img_ext)
-
+    img1_file_name = os.path.join(img_dir, match_img1_name+img_ext)
     match_img2_name = os.path.basename(match_file).split('.')[0].split('-')[-2].split('__')[1]
-    img2_file_name = os.path.join(img_base_path, match_img2_name+img_ext)
+    img2_file_name = os.path.join(img_dir, match_img2_name+img_ext)
+    
+    return img1_file_name, img2_file_name
 
-    return img1_file_name, img2_file_name, match_img1_name, match_img2_name
+def parse_image_name_from_ip_file_name(ip_csv_fn, img_dir, img_extension):
+    '''
+    Function to parse out image file names from interest point files.
+    '''
+    
+    # Get image extension in case extension prefix used (e.g. 8.tif)
+    img_ext = '.' + img_extension.split('.')[-1]
+    
+    # Get image base name from ip csv file. Should match image file in image directory.
+    # TODO add check and give user useful error message if no image file found.
+    img_base_name = os.path.splitext(os.path.split(ip_csv_fn)[-1])[0].split('-')[-1]
+    img_file_name = os.path.join(img_dir, img_base_name+img_ext)
+
+    return img_file_name, ip_csv_fn
+
+    
     
 def ba_pointmap_to_gdf(df):
     df = df.rename(columns={'# lon':'lon',
