@@ -1,3 +1,4 @@
+import bare.batch
 import bare.common
 import bare.core
 import bare.geospatial
