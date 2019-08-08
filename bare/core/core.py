@@ -90,10 +90,11 @@ def parse_image_names_from_match_file_name(match_file, img_dir, img_extension):
     # into v2_sub8 and v3_sub8.
     # TODO Need cleaner way to extract image file paths that belong
     # to a .match file. Image names cannot have a '-' in them else this will break.
+    # Could write in a check and exception with custom error for this.
     # Need to handle numpass 0 when no clean.match file is created.
-    match_img1_name = os.path.basename(match_file).split('.')[0].split('-')[-2].split('__')[0]
+    match_img1_name = os.path.split(match_file)[-1].split('-')[-2].split('__')[0]
     img1_file_name = os.path.join(img_dir, match_img1_name+img_ext)
-    match_img2_name = os.path.basename(match_file).split('.')[0].split('-')[-2].split('__')[1]
+    match_img2_name = os.path.split(match_file)[-1].split('-')[-2].split('__')[1]
     img2_file_name = os.path.join(img_dir, match_img2_name+img_ext)
     
     return img1_file_name, img2_file_name
