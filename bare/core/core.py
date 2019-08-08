@@ -113,17 +113,16 @@ def parse_image_name_from_ip_file_name(ip_csv_fn, img_dir, img_extension):
 
     return img_file_name, ip_csv_fn
 
-    
-    
-def ba_pointmap_to_gdf(df):
+def ba_pointmap_to_gdf(df, ascending=True):
     df = df.rename(columns={'# lon':'lon',
                             ' lat':'lat',
                             ' height_above_datum':'height_above_datum',
-                            ' mean_residual':'mean_residual'})
+                            ' mean_residual':'mean_residual',
+                            ' num_observations':'num_observations'})
     geometry = [Point(xy) for xy in zip(df['lon'], df['lat'])] 
     gdf = gpd.GeoDataFrame(df,geometry=geometry,crs={'init':'epsg:4326'})
     gdf = gdf.to_crs({'init':'epsg:3857'})
-    gdf = gdf.sort_values('mean_residual',ascending=True)
+    gdf = gdf.sort_values('mean_residual',ascending=ascending)
     return gdf
     
 def read_ip_record(mf):

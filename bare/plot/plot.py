@@ -208,12 +208,11 @@ def plot_dxdy(ba_dir, out_dir='qc_plots/dxdy'):
         plt.close()
 
 
-def plot_residuals(ba_dir, 
-                   out_dir='qc_plots/residuals', 
-                   glacier_shape_fn=None):
+def plot_residuals(ba_dir, out_dir='qc_plots/residuals', ascending=True, basemap='ctx', glacier_shape_fn=None):
     # TODO
     # create interactive plot (html with bokeh maybe) to pan and zoom around
     # when residuals end up in weird places
+    # Allow for plotting over orthoimage mosaic
     '''
 
     Function to visualize residuals before and after camera alignment during bundle adjustment.
@@ -222,49 +221,58 @@ def plot_residuals(ba_dir,
 
     print('plotting residuals before and after bundle adjustment...')
 
-    out_dir_abs = bare.common.create_dir(out_dir)
+    initial_point_map_csv_fn = glob.glob(os.path.join(ba_dir,'*initial_*_pointmap*csv'))[0]
+    final_point_map_csv_fn = glob.glob(os.path.join(ba_dir,'*final_*_pointmap*csv'))[0]
 
-    initial_point_map_csv_fn = glob.glob(os.path.join(ba_dir,
-                                                      '*initial_*_pointmap*'))[0]
-    final_point_map_csv_fn = glob.glob(os.path.join(ba_dir,
-                                                    '*final_*_pointmap*'))[0]
     initial_df = pd.read_csv(initial_point_map_csv_fn,skiprows=[1, 1])
     final_df = pd.read_csv(final_point_map_csv_fn,skiprows=[1, 1])
-    initial_gdf = bare.core.ba_pointmap_to_gdf(initial_df)
-    final_gdf = bare.core.ba_pointmap_to_gdf(final_df)
 
-    fig, ax = plt.subplots(1,2,figsize=(20,10))
+    #Convert to GeoDataFrame
+    initial_gdf = bare.core.ba_pointmap_to_gdf(initial_df, ascending=ascending)
+    final_gdf = bare.core.ba_pointmap_to_gdf(final_df, ascending=ascending)
+
+    fig, axa = plt.subplots(1,2,figsize=(10,5), sharex=True, sharey=True)
     clim = np.percentile(initial_gdf['mean_residual'].values,(2,98))
     #     clim_final = np.percentile(final_gdf['mean_residual'].values,(2,98))
 
+    #Add plots to show number of images per match point
+
     initial_gdf.plot(column='mean_residual',
-                     ax=ax[0], 
+                     ax=axa[0], 
                      cmap='inferno',
                      vmin=clim[0],
                      vmax=clim[1], 
                      legend=True,
-                     s=1)
+                     s=initial_gdf['num_observations']/initial_gdf['num_observations'].max())
 
     final_gdf.plot(column='mean_residual',
-                   ax=ax[1], 
+                   ax=axa[1], 
                    cmap='inferno',
                    vmin=clim[0],
                    vmax=clim[1], 
                    legend=True,
-                   s=1)
+                   s=final_gdf['num_observations']/final_gdf['num_observations'].max())
+
+    axa[0].set_title('Before bundle adjustment (n=%i)' % initial_df.shape[0])
+    axa[1].set_title('After bundle adjustment (n=%i)' % final_df.shape[0])
+    axa[0].set_facecolor('0.5')
+    axa[1].set_facecolor('0.5')
 
     if glacier_shape_fn:
         glacier_shape = gpd.read_file(glacier_shape_fn)
         glacier_shape = glacier_shape.to_crs({'init' :'epsg:3857'})
-        glacier_shape.plot(ax=ax[0],alpha=0.5)
-        glacier_shape.plot(ax=ax[1],alpha=0.5)
+        glacier_shape.plot(ax=axa[0],alpha=0.5)
+        glacier_shape.plot(ax=axa[1],alpha=0.5)
 
-    ctx.add_basemap(ax[0])
-    ctx.add_basemap(ax[1])
+    if basemap == 'ctx':
+        ctx.add_basemap(axa[0])
+        ctx.add_basemap(axa[1])
 
-    out = os.path.join(out_dir_abs,'residuals_before_and_after.png')
-    fig.savefig(out, bbox_inches = "tight")
-    plt.close()
+    plt.suptitle("Match point mean residuals (m)")
+
+    out = os.path.join(ba_dir,'ba_match_residuals_before_and_after.jpg')
+    fig.savefig(out, quality=85, dpi=300, bbox_inches="tight")
+    plt.show()
 
 def plot_tsai_camera_positions_before_and_after(ba_dir,
                                                 input_cam_dir, 
