@@ -6,8 +6,6 @@ import multiprocessing
 from functools import partial
 
 def create_overview(img_file_name, scale=8):
-    # TODO
-    # add check if overview already exists
     '''
     Function to generate overviews using gdaladdo. gdal must be installed to environment.
     Default overview scale is 8. Can specify multiple overview scales at once, e.g. scale = 8 16 32 64.
