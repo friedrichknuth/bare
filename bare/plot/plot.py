@@ -268,7 +268,7 @@ def plot_residuals(ba_dir, out_dir='qc_plots/residuals', ascending=True, basemap
         ctx.add_basemap(axa[0])
         ctx.add_basemap(axa[1])
 
-    plt.suptitle("Match point mean residuals (m)")
+    plt.suptitle("Match point reprojection error: mean absolute residuals (px)")
 
     out = os.path.join(ba_dir,'ba_match_residuals_before_and_after.jpg')
     fig.savefig(out, quality=85, dpi=300, bbox_inches="tight")
