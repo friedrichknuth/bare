@@ -29,7 +29,7 @@ _bare_ contains modular libraries that can accomodate additional quality control
 For contribution guidelines and the author's TODO list, please click [here](./CONTRIBUTING.md).
 
 ### Licence
-This project is licensed under the terms of the (MIT License](./LICENSE.rst)
+This project is licensed under the terms of the [MIT License](./LICENSE.rst)
 
 ### References
 NASA Ames Stereo Pipeline [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1345235.svg)](https://doi.org/10.5281/zenodo.1345235)
