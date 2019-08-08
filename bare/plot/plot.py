@@ -42,52 +42,6 @@ def plot_ip_over_images(ba_dir,
         img_file_name, ip_csv_fn = bare.core.parse_image_name_from_ip_file_name(ip_csv_fn, img_dir, img_extension)
         
         ip_plot(img_file_name, ip_csv_fn, out_dir_abs, scale=scale)
-
-
-def ip_downsampled_plot(downsampled_img_file_name, full_res_ip_csv_fn, out_dir_abs=None, scale=1.0):
-    
-    '''
-    Function to downsample interest points and plot over already downsampled image.
-    User must specify a the correct scale to what the image has been downsampled.
-    '''
-    
-    img_base_name = os.path.splitext(os.path.split(downsampled_img_file_name)[-1])[0]
-    print(img_base_name)
-    
-    df = pd.read_csv(full_res_ip_csv_fn, delimiter=r"\s+")
-    img_ds = gdal.Open(downsampled_img_file_name)
-
-    df['x1'] /= scale
-    df['y1'] /= scale
-    
-    img = img_ds.ReadAsArray()
-
-    # Plot the data
-    fig, ax = plt.subplots(1,figsize=(10,10))
-    clim = np.percentile(img, (2,98))
-    
-    ax.scatter(df['x1'],df['y1'],
-               color='r',
-               marker='o',
-               facecolor='none',
-               s=10)
-    ax.imshow(img, clim=clim, cmap='gray')
-    ax.set_aspect('equal')
-    ax.set_title('interest points\n'+ img_base_name)
-    plt.tight_layout()
-    
-    # Visualize or write to file if out_dir_abs provided
-    if out_dir_abs is not None:
-        out = os.path.join(out_dir_abs, img_base_name+'_interest_points.png')
-        fig.savefig(out, bbox_inches = "tight")
-        plt.close()
-    else:
-        plt.show()
-        
-    # Drop image data from memory
-    img = None
-    img_ds = None
-    
     
 def ip_plot(img_file_name, ip_csv_fn, out_dir_abs=None, scale=1.0):
     
