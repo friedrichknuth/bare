@@ -70,7 +70,8 @@ def plot_all_qc_products(ba_dir,
 
     bare.plot.plot_tsai_camera_positions_before_and_after(ba_dir,
                                                 input_cam_dir,
-                                                glacier_shape_fn=glacier_shape_fn)
+                                                glacier_shape_fn=glacier_shape_fn,
+                                                out_dir='qc_plots/camera_positions')
 
     plot_ip_over_images(ba_dir,
                         img_dir, 
@@ -80,9 +81,9 @@ def plot_all_qc_products(ba_dir,
                         img_dir, 
                         img_extension=img_extension)
 
-    bare.plot.plot_dxdy(ba_dir)
+    bare.plot.plot_dxdy(ba_dir,out_dir='qc_plots/dxdy')
 
-    bare.plot.plot_residuals(ba_dir)
+    bare.plot.plot_residuals(ba_dir,out_dir='qc_plots/residuals')
     
 
                              

@@ -32,7 +32,7 @@ def create_overview(img_file_name, scale=8):
 
 def parallel_create_overview(image_list, scale=8, threads=8):
     # TODO
-    # use os.cpu_count() to determine optimal thread count based on machine,
+    # Use os.cpu_count() to determine optimal thread count based on machine,
     # if reasonable approach.
     '''
     Function to run create_overview() in parallel. Threads set to 8 by default.

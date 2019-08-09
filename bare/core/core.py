@@ -28,22 +28,27 @@ warnings.filterwarnings("ignore", message="Palette images with Transparency")
   currently will break if - character in image file name.
 '''
 
-
-def extract_tsai_coordinates(cam_dir, extension='.tsai'):
-    geometry = []
+def extract_tsai_coordinates(cam_file):
+    with open(cam_file) as f:
+        sub = 'C = '
+        lines = [line.rstrip('\n') for line in f]
+        coords = [s for s in lines if sub in s]
+        coords = coords[0].split()[-3:]
+        lon = float(coords[0])
+        lat = float(coords[1])
+        alt = float(coords[2])
+        geometry = Point(lon,lat,alt)
+    return geometry
+    
+    
+def iter_extract_tsai_coordinates(cam_dir, extension='.tsai'):
+    geometries = []
     cam_files = sorted(glob.glob(os.path.join(cam_dir,'*'+extension)))
     for filename in cam_files:
         if filename.endswith(extension):
-            with open(filename) as f:
-                sub = 'C = '
-                lines = [line.rstrip('\n') for line in f]
-                coords = [s for s in lines if sub in s]
-                coords = coords[0].split()[-3:]
-                lon = float(coords[0])
-                lat = float(coords[1])
-                alt = float(coords[2])
-                geometry.append(Point(lon,lat,alt))
-    tsai_points = gpd.GeoDataFrame(crs={'init' :'epsg:4978'}, geometry=geometry)
+            geometry = extract_tsai_coordinates(filename)
+            geometries.append(geometry)
+    tsai_points = gpd.GeoDataFrame(crs={'init' :'epsg:4978'}, geometry=geometries)
     tsai_points['file'] = [os.path.basename(x).split('.')[0] for x in cam_files]
     return tsai_points
        
