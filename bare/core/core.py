@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import geopandas as gpd
 from osgeo import gdal
-from shapely.geometry import Point
+from shapely.geometry import Point, Polygon
 import contextily as ctx
 import matplotlib.pyplot as plt
 
@@ -26,8 +26,41 @@ warnings.filterwarnings("ignore", message="Palette images with Transparency")
   images from match file file name.
 - find better way to parse image file names from match file. 
   currently will break if - character in image file name.
+- extract 3D points and plot
+    # geometry = [Point(xyz) for xyz in zip(df['lon'], df['lat'], df['elevation'])]
+    # gdf = gpd.GeoDataFrame(df,geometry=geometry,crs={'init':'epsg:4326'})
 '''
 
+def gcp_corners_to_gdf_polygon(gcp_file):
+    # TODO
+    # Pass crs from reference DEM to bare.geospatial.df_points_to_polygon_gdf(df)
+    """
+    Function to extract image corner coordinates from gcp file genereated with ASP cam_gen
+    and return as polygon within geopandas dataframe.
+    """
+    print('Assuming corner coordinates derived from reference DEM are in EPSG 4326')
+    # parse ASP gcp file
+    df = pd.read_csv(gcp_file, header=None, delim_whitespace=True)
+    df = df.drop([0,4,5,6,10,11],axis=1) # drop sigma columns
+    df.columns = ['lat','lon','elevation','file_name','img_x','img_y']
+    df = df[:4] # first 4 are corners. next for are center of quadrants.
+
+    polygon_gdf = bare.geospatial.df_points_to_polygon_gdf(df)
+    polygon_gdf['file_name'] = os.path.split(df['file_name'][0])[-1]
+    return polygon_gdf
+
+def ba_pointmap_to_gdf(df, ascending=True):
+    df = df.rename(columns={'# lon':'lon',
+                            ' lat':'lat',
+                            ' height_above_datum':'height_above_datum',
+                            ' mean_residual':'mean_residual',
+                            ' num_observations':'num_observations'})
+    geometry = [Point(xy) for xy in zip(df['lon'], df['lat'])] 
+    gdf = gpd.GeoDataFrame(df,geometry=geometry,crs={'init':'epsg:4326'})
+    gdf = gdf.to_crs({'init':'epsg:3857'})
+    gdf = gdf.sort_values('mean_residual',ascending=ascending)
+    return gdf
+    
 def extract_tsai_coordinates(cam_file):
     with open(cam_file) as f:
         sub = 'C = '
@@ -53,7 +86,6 @@ def iter_extract_tsai_coordinates(cam_dir, extension='.tsai'):
     return tsai_points
        
 def iter_ip_to_csv(ba_dir):
-#     print('converting interest point files (vwip) to csv...')
     vwips = sorted(glob.glob(os.path.join(ba_dir,"*.vwip")))
     ip_csv_list = []
     for filename in vwips:
@@ -63,7 +95,6 @@ def iter_ip_to_csv(ba_dir):
     
 
 def iter_mp_to_csv(ba_dir):
-#     print('converting match point files to csv...')
     matches = sorted(glob.glob(os.path.join(ba_dir, "*clean.match")))
     if matches:
         print('    processing clean.match files only.')
@@ -82,21 +113,20 @@ def iter_mp_to_csv(ba_dir):
     return match_csv_list 
 
 def parse_image_names_from_match_file_name(match_file, img_dir, img_extension):
-    '''
+    # TODO 
+    # - Need cleaner way to extract image file paths that belong to a .match file. Image names cannot have a '-' in them else this will break. Could write in a check and exception with custom error for this.
+    # - Need to handle numpass 0 when no clean.match file is created.
+    
+    """
     Function to parse out image file names from match files.
     Image file names cannot have '-' in them, else this will break.
-    '''
+    """
 
-    # Get image extension in case extension prefix used (e.g. 8.tif)
+    # get image extension in case extension prefix used (e.g. 8.tif)
     img_ext = '.' + img_extension.split('.')[-1]
 
-    # Extract image pair file names from ASP match file name
-    # For example e.g. split ../run-v2_sub8__v3_sub8-clean.csv 
-    # into v2_sub8 and v3_sub8.
-    # TODO Need cleaner way to extract image file paths that belong
-    # to a .match file. Image names cannot have a '-' in them else this will break.
-    # Could write in a check and exception with custom error for this.
-    # Need to handle numpass 0 when no clean.match file is created.
+    # extract image pair file names from ASP match file name
+    # e.g. split ../run-v2_sub8__v3_sub8-clean.csv into v2_sub8 and v3_sub8
     match_img1_name = os.path.split(match_file)[-1].split('-')[-2].split('__')[0]
     img1_file_name = os.path.join(img_dir, match_img1_name+img_ext)
     match_img2_name = os.path.split(match_file)[-1].split('-')[-2].split('__')[1]
@@ -105,31 +135,20 @@ def parse_image_names_from_match_file_name(match_file, img_dir, img_extension):
     return img1_file_name, img2_file_name
 
 def parse_image_name_from_ip_file_name(ip_csv_fn, img_dir, img_extension):
-    '''
+    # TODO 
+    # - Add check and give user useful error message if no image file found.
+    """
     Function to parse out image file names from interest point files.
-    '''
+    """
     
-    # Get image extension in case extension prefix used (e.g. 8.tif)
+    # get image extension in case extension prefix used (e.g. 8.tif)
     img_ext = '.' + img_extension.split('.')[-1]
     
-    # Get image base name from ip csv file. Should match image file in image directory.
-    # TODO add check and give user useful error message if no image file found.
+    # get image base name from ip csv file.
     img_base_name = os.path.splitext(os.path.split(ip_csv_fn)[-1])[0].split('-')[-1]
     img_file_name = os.path.join(img_dir, img_base_name+img_ext)
 
     return img_file_name, ip_csv_fn
-
-def ba_pointmap_to_gdf(df, ascending=True):
-    df = df.rename(columns={'# lon':'lon',
-                            ' lat':'lat',
-                            ' height_above_datum':'height_above_datum',
-                            ' mean_residual':'mean_residual',
-                            ' num_observations':'num_observations'})
-    geometry = [Point(xy) for xy in zip(df['lon'], df['lat'])] 
-    gdf = gpd.GeoDataFrame(df,geometry=geometry,crs={'init':'epsg:4326'})
-    gdf = gdf.to_crs({'init':'epsg:3857'})
-    gdf = gdf.sort_values('mean_residual',ascending=ascending)
-    return gdf
     
 def read_ip_record(mf):
     x, y = np.frombuffer(mf.read(8), dtype=np.float32)
@@ -148,7 +167,6 @@ def read_ip_record(mf):
 
 def write_ip_to_csv(filename):
     filename_out = os.path.splitext(filename)[0] + '.csv'
-    # print('converting',filename,'to',filename_out)
     with open(filename, 'rb') as mf, open(filename_out, 'w') as out:
         size1 = np.frombuffer(mf.read(8), dtype=np.uint64)[0]
         out.write('x1 y1\n')
@@ -160,7 +178,6 @@ def write_ip_to_csv(filename):
         
 def write_mp_to_csv(filename):
     filename_out = os.path.splitext(filename)[0] + '.csv'
-    # print('writing',filename_out)
     with open(filename, 'rb') as mf, open(filename_out, 'w') as out:
         size1 = np.frombuffer(mf.read(8), dtype=np.uint64)[0]
         size2 = np.frombuffer(mf.read(8), dtype=np.uint64)[0]
