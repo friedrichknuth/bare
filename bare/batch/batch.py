@@ -1,7 +1,85 @@
+import os
+import glob
+import pandas as pd
+import matplotlib.pyplot as plt
+import contextily as ctx
+
 import bare.common
 import bare.core
 import bare.plot
 
+
+def plot_footprints(cam_dir, 
+                    img_dir, 
+                    reference_dem,
+                    out_dir=None,
+                    img_file_extension='.tif',
+                    cam_file_extension='.tsai'):
+                    
+    """
+    Function to plot image footprints from images and camera files
+    """
+    # create output directory
+    out_dir_abs = bare.common.create_dir(out_dir)
+    
+    # get list of camera files
+    cam_list = sorted(glob.glob(os.path.join(cam_dir, '*'+ cam_file_extension)))
+        
+    df = pd.DataFrame()
+    
+    for cam_file in cam_list:
+        
+        img_base_name = os.path.splitext(os.path.split(cam_file)[-1])[0]
+        img_file_name = os.path.join(img_dir, img_base_name + img_file_extension)
+        
+        print('\nGenerating footprint for ' + img_base_name + img_file_extension +'.')
+        
+        footprint = bare.plot.plot_footprint(img_file_name,
+                                             cam_file,
+                                             reference_dem,
+                                             verbose=False)
+                                 
+        if footprint is not None:
+            df = df.append(footprint)
+        else:
+            continue
+    
+    # plot returned footprints    
+    fig, ax = plt.subplots(1,figsize=(10,10))
+
+    df.plot(ax=ax, 
+            color='b',
+            edgecolor='b',
+            alpha=0.1)
+                  
+    for idx, row in df.iterrows():
+        plt.annotate(s=row['file_name'],
+                     xy=row['polygon_center'],
+                     horizontalalignment='center')
+    
+    # # alternative plotting approaches
+    # df.plot(ax=ax,
+    #         facecolor='none',
+    #         edgecolor='b')
+    #
+    # df.plot(ax=ax,
+    #         column='file_name',
+    #         legend=True,
+    #         facecolor='none',
+    #         edgecolor='b',
+    #         legend_kwds={'bbox_to_anchor': (1.41, 1)})
+
+
+    ctx.add_basemap(ax)
+    ax.set_title('camera footprints')
+
+    # visualize or write to file if out_dir_abs provided
+    if out_dir_abs is not None:
+        out = os.path.join(out_dir_abs, 'footprints.png')
+        fig.savefig(out, bbox_inches = "tight")
+        plt.close()
+    else:
+        plt.show()
 
 def plot_ip_over_images(ba_dir, 
                         img_dir, 

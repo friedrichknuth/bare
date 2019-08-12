@@ -1,3 +1,4 @@
+import pandas as pd
 import subprocess
 from subprocess import Popen, PIPE, STDOUT
 import sys
@@ -59,13 +60,12 @@ def generate_corner_coordinates(image_file_name,
                                 verbose=False):
     # TODO
     # - Make reference_dem optional and download coarse global DEM for target area if not supplied.
-    # - Delete output camera after run, if created.
     # - Add cam_gen options --height-above-datum approximated_value and --datum WGS84 to accomodate DEM with potential holes in it,or insufficient extent.
     """
     Function to generate corner coordinates using cam_gen. Continuous reference DEM for full coverage area must be supplied to approximate footprint.
     """
     
-    print("Running ASP cam_gen to calculate camera footprint on ground from input camera file.")
+    print("Running ASP cam_gen to calculate image footprint on ground from input camera file and reference DEM.")
     
     image_file_base_name = os.path.splitext(image_file_name)[0]
     extension = os.path.splitext(camera_file)[-1]
@@ -91,7 +91,19 @@ def generate_corner_coordinates(image_file_name,
       
     run_command(call, verbose=verbose)
     
-    return gcp_file
+    os.remove(out_cam)
+    
+    # check output
+    df = pd.read_csv(gcp_file, header=None, delim_whitespace=True)
+    if len(df) != 8:
+        print('''
+        Unable to intersect all rays with reference DEM. Please ensure reference DEM
+        is continuous (no holes) and of sufficent extent. Consider mapprojecting the images
+        to determine required extent.
+        ''')
+        return
+    else:
+        return gcp_file
 
 
 

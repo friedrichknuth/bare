@@ -42,7 +42,7 @@ def gcp_corners_to_gdf_polygon(gcp_file):
     # parse ASP gcp file
     df = pd.read_csv(gcp_file, header=None, delim_whitespace=True)
     df = df.drop([0,4,5,6,10,11],axis=1) # drop sigma columns
-    df.columns = ['lat','lon','elevation','file_name','img_x','img_y']
+    df.columns = ['lat','lon','elevation','file_name','img_x','img_y']    
     df = df[:4] # first 4 are corners. next for are center of quadrants.
 
     polygon_gdf = bare.geospatial.df_points_to_polygon_gdf(df)

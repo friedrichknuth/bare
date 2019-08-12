@@ -20,7 +20,8 @@ warnings.filterwarnings("ignore", message="Palette images with Transparency")
 
 def plot_footprint(img_file_name, camera_file, 
                    reference_dem, out_dir=None,
-                   basemap='ctx', verbose=False):
+                   basemap='ctx', verbose=False,
+                   viz=False):
     """
     Function to plot camera footprints.
     """
@@ -28,39 +29,46 @@ def plot_footprint(img_file_name, camera_file,
     img_base_name = os.path.splitext(os.path.split(img_file_name)[-1])[0]
     
     gcp_file = bare.utils.generate_corner_coordinates(img_file_name, 
-                                           camera_file, 
-                                           reference_dem, 
-                                           verbose=verbose)
-                                           
-    polygon_gdf = bare.core.gcp_corners_to_gdf_polygon(gcp_file)
-    polygon_gdf = polygon_gdf.to_crs(epsg=3857)
-    polygon_gdf = bare.geospatial.extract_polygon_centers(polygon_gdf)
+                                                      camera_file, 
+                                                      reference_dem, 
+                                                      verbose=verbose)
+                                                      
+    if gcp_file != None:                                  
+        polygon_gdf = bare.core.gcp_corners_to_gdf_polygon(gcp_file)
+        polygon_gdf = polygon_gdf.to_crs(epsg=3857)
+        polygon_gdf = bare.geospatial.extract_polygon_centers(polygon_gdf)
     
-    print('Plotting camera footprint.')
-    
-    fig, ax = plt.subplots(1,figsize=(10,10))
-    polygon_gdf.plot(ax=ax,
-                     facecolor="none",
-                     edgecolor='b')
+        if viz == True:
+            print('Plotting camera footprint.')
+            fig, ax = plt.subplots(1,figsize=(10,10))
+            polygon_gdf.plot(ax=ax,
+                             facecolor="none",
+                             edgecolor='b')
                      
-    if basemap == 'ctx':
-        ctx.add_basemap(ax)
+            if basemap == 'ctx':
+                ctx.add_basemap(ax)
 
-    for idx, row in polygon_gdf.iterrows():
-        plt.annotate(s=row['file_name'], 
-                     xy=row['polygon_center'],
-                     horizontalalignment='center')
+            for idx, row in polygon_gdf.iterrows():
+                plt.annotate(s=row['file_name'], 
+                             xy=row['polygon_center'],
+                             horizontalalignment='center')
                      
-    ax.set_title('camera footprint')
+            ax.set_title('camera footprint')
     
-    if out_dir_abs is not None:
-        out = os.path.join(out_dir_abs, img_base_name+'_footprint.png')
-        fig.savefig(out, bbox_inches = "tight")
-        plt.close()
+            if out_dir_abs is not None:
+                out = os.path.join(out_dir_abs, img_base_name+'_footprint.png')
+                fig.savefig(out, bbox_inches = "tight")
+                plt.close()
+            else:
+                print('yes')
+                plt.show()
+    
+        else:
+            return polygon_gdf
+            
     else:
-        plt.show()
-    
-    return polygon_gdf
+        print('No footprint generated for ' + img_file_name)
+        return
     
     
 def ip_plot(img_file_name, ip_csv_fn, out_dir_abs=None, scale=1.0):
