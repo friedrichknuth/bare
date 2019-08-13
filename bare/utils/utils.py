@@ -91,20 +91,21 @@ def generate_corner_coordinates(image_file_name,
       
     run_command(call, verbose=verbose)
     
-    os.remove(out_cam)
-    
     # check output
-    df = pd.read_csv(gcp_file, header=None, delim_whitespace=True)
-    if len(df) != 8:
-        print('''
-        Unable to intersect all rays with reference DEM. Please ensure reference DEM
-        is continuous (no holes) and of sufficent extent. Consider mapprojecting the images
-        to determine required extent.
-        ''')
-        return
-    else:
-        return gcp_file
-
+    try:
+        df = pd.read_csv(gcp_file, header=None, delim_whitespace=True)
+        if len(df) != 8:
+            print('''
+            Unable to intersect all rays with reference DEM. Please ensure reference DEM
+            is continuous (no holes) and of sufficent extent. Consider mapprojecting the images
+            to determine required extent.
+            ''')
+            return
+        else:
+            os.remove(out_cam)
+            return gcp_file
+    except:
+        pass 
 
 
 def run_command(command, verbose=False):

@@ -44,42 +44,43 @@ def plot_footprints(cam_dir,
         else:
             continue
     
-    # plot returned footprints    
-    fig, ax = plt.subplots(1,figsize=(10,10))
+    if not df.empty:
+        # plot returned footprints
+        fig, ax = plt.subplots(1,figsize=(10,10))
 
-    df.plot(ax=ax, 
-            color='b',
-            edgecolor='b',
-            alpha=0.1)
-                  
-    for idx, row in df.iterrows():
-        plt.annotate(s=row['file_name'],
-                     xy=row['polygon_center'],
-                     horizontalalignment='center')
-    
-    # # alternative plotting approaches
-    # df.plot(ax=ax,
-    #         facecolor='none',
-    #         edgecolor='b')
-    #
-    # df.plot(ax=ax,
-    #         column='file_name',
-    #         legend=True,
-    #         facecolor='none',
-    #         edgecolor='b',
-    #         legend_kwds={'bbox_to_anchor': (1.41, 1)})
+        df.plot(ax=ax,
+                color='b',
+                edgecolor='b',
+                alpha=0.1)
+
+        for idx, row in df.iterrows():
+            plt.annotate(s=row['file_name'],
+                         xy=row['polygon_center'],
+                         horizontalalignment='center')
+
+        # # alternative plotting approaches
+        # df.plot(ax=ax,
+        #         facecolor='none',
+        #         edgecolor='b')
+        #
+        # df.plot(ax=ax,
+        #         column='file_name',
+        #         legend=True,
+        #         facecolor='none',
+        #         edgecolor='b',
+        #         legend_kwds={'bbox_to_anchor': (1.41, 1)})
 
 
-    ctx.add_basemap(ax)
-    ax.set_title('camera footprints')
+        ctx.add_basemap(ax)
+        ax.set_title('camera footprints')
 
-    # visualize or write to file if out_dir_abs provided
-    if out_dir_abs is not None:
-        out = os.path.join(out_dir_abs, 'footprints.png')
-        fig.savefig(out, bbox_inches = "tight")
-        plt.close()
-    else:
-        plt.show()
+        # visualize or write to file if out_dir_abs provided
+        if out_dir_abs is not None:
+            out = os.path.join(out_dir_abs, 'footprints.png')
+            fig.savefig(out, bbox_inches = "tight")
+            plt.close()
+        else:
+            plt.show()
 
 def plot_ip_over_images(ba_dir, 
                         img_dir, 
