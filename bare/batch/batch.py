@@ -4,7 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import contextily as ctx
 
-import bare.common
+import bare.io
 import bare.core
 import bare.plot
 
@@ -20,7 +20,7 @@ def plot_footprints(cam_dir,
     Function to plot image footprints from images and camera files
     """
     # create output directory
-    out_dir_abs = bare.common.create_dir(out_dir)
+    out_dir_abs = bare.io.create_dir(out_dir)
     
     # get list of camera files
     cam_list = sorted(glob.glob(os.path.join(cam_dir, '*'+ cam_file_extension)))
@@ -97,7 +97,7 @@ def plot_ip_over_images(ba_dir,
     print('plotting interest points over images...')
 
     # create output directory
-    out_dir_abs = bare.common.create_dir(out_dir)
+    out_dir_abs = bare.io.create_dir(out_dir)
 
     # convert interest points in binary vwip files to csv.
     ip_csv_list = bare.core.iter_ip_to_csv(ba_dir)
@@ -126,7 +126,7 @@ def plot_mp_over_images(ba_dir,
     print('plotting match points over images...')
 
     # create output directory
-    out_dir_abs = bare.common.create_dir(out_dir)
+    out_dir_abs = bare.io.create_dir(out_dir)
 
     # convert .match files to csv
     match_csv_list = bare.core.iter_mp_to_csv(ba_dir)

@@ -8,6 +8,7 @@ dependencies:
   - descartes
   - shapely
   - contextily
+  - xmltodict
   - pip
   - pip:
     - gdal

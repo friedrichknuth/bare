@@ -7,6 +7,10 @@ from distutils.spawn import find_executable
 import multiprocessing
 from functools import partial
 
+import bare.io
+import bare.geospatial
+
+
 def create_overview(img_file_name, scale=8):
     # TODO
     # - Execute with run_command function for realtime output.
@@ -90,22 +94,7 @@ def generate_corner_coordinates(image_file_name,
                 '--input-camera', camera_file]
       
     run_command(call, verbose=verbose)
-    
-    # check output
-    try:
-        df = pd.read_csv(gcp_file, header=None, delim_whitespace=True)
-        if len(df) != 8:
-            print('''
-            Unable to intersect all rays with reference DEM. Please ensure reference DEM
-            is continuous (no holes) and of sufficent extent. Consider mapprojecting the images
-            to determine required extent.
-            ''')
-            return
-        else:
-            os.remove(out_cam)
-            return gcp_file
-    except:
-        pass 
+    return gcp_file
 
 
 def run_command(command, verbose=False):
@@ -119,3 +108,20 @@ def run_command(command, verbose=False):
         line = (p.stdout.readline()).decode('ASCII').rstrip('\n')
         if verbose == True:
             print(line)
+
+def wv_xml_to_gdf(wv_xml):
+    wv_json = bare.io.xml_to_json(wv_xml)
+    df = pd.DataFrame(wv_json['isd']['EPH']['EPHEMLISTList']['EPHEMLIST'])
+    
+    df = df[0].str.split(expand = True)
+    df = df.drop([0,4,5,6,7,8,9,10,11,12],axis=1)
+    df.columns = ['altitude','lon','lat']
+    df = df.apply(pd.to_numeric)
+    
+    gdf = bare.geospatial.df_xyz_coords_to_gdf(df, z='altitude', crs='4978')
+    
+    return gdf
+    
+    
+    
+    

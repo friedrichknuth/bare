@@ -9,7 +9,7 @@ from shapely.geometry import Point, Polygon
 import contextily as ctx
 import matplotlib.pyplot as plt
 
-import bare.common
+import bare.io
 import bare.geospatial
 
 import warnings
@@ -40,10 +40,27 @@ def gcp_corners_to_gdf_polygon(gcp_file):
     """
     print('Assuming corner coordinates derived from reference DEM are in EPSG 4326')
     # parse ASP gcp file
+    
+    # try:
     df = pd.read_csv(gcp_file, header=None, delim_whitespace=True)
-    df = df.drop([0,4,5,6,10,11],axis=1) # drop sigma columns
-    df.columns = ['lat','lon','elevation','file_name','img_x','img_y']    
-    df = df[:4] # first 4 are corners. next for are center of quadrants.
+    if len(df) != 8:
+        print('''
+        Unable to intersect all rays with reference DEM. Please ensure reference DEM
+        is continuous (no holes) and of sufficent extent. Consider mapprojecting the images
+        to determine required extent.
+        ''')
+        return
+    else:
+        df = df.drop([0,4,5,6,10,11],axis=1) # drop sigma columns
+        df.columns = ['lat','lon','elevation','file_name','img_x','img_y']    
+        df = df[:4] # first 4 are corners. next for are center of quadrants.
+    # except:
+    #     print(sys.exc_info()[0])
+    #     pass
+        
+        
+        
+
 
     polygon_gdf = bare.geospatial.df_points_to_polygon_gdf(df)
     polygon_gdf['file_name'] = os.path.split(df['file_name'][0])[-1]

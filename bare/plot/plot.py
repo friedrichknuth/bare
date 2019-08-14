@@ -9,7 +9,7 @@ from shapely.geometry import Point
 import contextily as ctx
 import matplotlib.pyplot as plt
 
-import bare.common
+import bare.io
 import bare.geospatial
 import bare.core
 import bare.utils
@@ -22,10 +22,14 @@ def plot_footprint(img_file_name, camera_file,
                    reference_dem, out_dir=None,
                    basemap='ctx', verbose=False,
                    viz=False):
+    # TODO
+    # - Add condition to plot WV or tsai cameras on plot
+    # - Should probably break this up a bit into seperate functions
+    
     """
     Function to plot camera footprints.
     """
-    out_dir_abs = bare.common.create_dir(out_dir)
+    out_dir_abs = bare.io.create_dir(out_dir)
     img_base_name = os.path.splitext(os.path.split(img_file_name)[-1])[0]
     
     gcp_file = bare.utils.generate_corner_coordinates(img_file_name, 
@@ -33,8 +37,10 @@ def plot_footprint(img_file_name, camera_file,
                                                       reference_dem, 
                                                       verbose=verbose)
                                                       
-    if gcp_file != None:                                  
-        polygon_gdf = bare.core.gcp_corners_to_gdf_polygon(gcp_file)
+                                 
+    polygon_gdf = bare.core.gcp_corners_to_gdf_polygon(gcp_file)
+    
+    if not polygon_gdf.empty:
         polygon_gdf = polygon_gdf.to_crs(epsg=3857)
         polygon_gdf = bare.geospatial.extract_polygon_centers(polygon_gdf)
     
@@ -44,12 +50,15 @@ def plot_footprint(img_file_name, camera_file,
             polygon_gdf.plot(ax=ax,
                              facecolor="none",
                              edgecolor='b')
-                     
+            
+            ## Need to clean up canvas for WV cameras.
+            # bare.utils.wv_xml_to_gdf(camera_file).plot(ax=ax,marker='.')
+            
             if basemap == 'ctx':
                 ctx.add_basemap(ax)
 
             for idx, row in polygon_gdf.iterrows():
-                plt.annotate(s=row['file_name'], 
+                plt.annotate(s=row['file_name'],
                              xy=row['polygon_center'],
                              horizontalalignment='center')
                      
@@ -60,10 +69,10 @@ def plot_footprint(img_file_name, camera_file,
                 fig.savefig(out, bbox_inches = "tight")
                 plt.close()
             else:
-                print('yes')
                 plt.show()
     
         else:
+            # return for batch plotting
             return polygon_gdf
             
     else:
@@ -74,7 +83,7 @@ def plot_footprint(img_file_name, camera_file,
 def ip_plot(img_file_name, ip_csv_fn, out_dir_abs=None, scale=1.0):
 
     # create output directory
-    out_dir_abs = bare.common.create_dir(out_dir_abs)
+    out_dir_abs = bare.io.create_dir(out_dir_abs)
     
     img_base_name = os.path.splitext(os.path.split(img_file_name)[-1])[0]
     
@@ -124,7 +133,7 @@ def mp_plot(img1_fn, img2_fn, match_csv_fn, out_dir_abs=None, scale=1.0):
     Function to generate plots fro two images and their corresponding match csv.
     '''
     # create output directory
-    out_dir_abs = bare.common.create_dir(out_dir_abs)
+    out_dir_abs = bare.io.create_dir(out_dir_abs)
     
     # load match file into DataFrame
     df = pd.read_csv(match_csv_fn, delimiter=r"\s+")
@@ -185,7 +194,7 @@ def plot_dxdy(ba_dir, out_dir='qc_plots/dxdy'):
     print('plotting dxdy...')
 
     # create output directory
-    out_dir_abs = bare.common.create_dir(out_dir)
+    out_dir_abs = bare.io.create_dir(out_dir)
 
     match_csv_list = bare.core.iter_mp_to_csv(ba_dir)
 
@@ -224,7 +233,7 @@ def plot_residuals(ba_dir, out_dir=None, ascending=True, basemap='ctx', glacier_
     print('plotting residuals before and after bundle adjustment...')
     
     # create output directory
-    out_dir_abs = bare.common.create_dir(out_dir)
+    out_dir_abs = bare.io.create_dir(out_dir)
     
     initial_point_map_csv_fn = glob.glob(os.path.join(ba_dir,'*initial_*_pointmap*csv'))[0]
     final_point_map_csv_fn = glob.glob(os.path.join(ba_dir,'*final_*_pointmap*csv'))[0]
@@ -303,7 +312,7 @@ def plot_tsai_camera_positions_before_and_after(ba_dir,
     '''
     print('plotting tsai camera positions before and after bundle adjustment...')
 
-    out_dir_abs = bare.common.create_dir(out_dir)
+    out_dir_abs = bare.io.create_dir(out_dir)
                                             
     positions_before_ba = bare.core.iter_extract_tsai_coordinates(input_cam_dir,
                                         extension=extension)

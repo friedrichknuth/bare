@@ -58,12 +58,12 @@ def geotif2polygon(geotif_name):
 def df_points_to_polygon_gdf(df, 
                              lon='lon',
                              lat='lat',
-                             elevation='elevation',
+                             z='elevation',
                              crs='4326'):
     vertices = []
 
     for i in range(len(df)):
-        vertex = (df[lon][i], df[lat][i], df[elevation][i])
+        vertex = (df[lon][i], df[lat][i], df[z][i])
         vertices.append(vertex)
         
     polygon = Polygon(vertices)
@@ -77,3 +77,16 @@ def extract_polygon_centers(gdf):
     gdf['polygon_center'] = gdf['geometry'].apply(lambda x: x.representative_point().coords[:])
     gdf['polygon_center'] = [coords[0] for coords in gdf['polygon_center']]
     return gdf
+    
+def df_xyz_coords_to_gdf(df, 
+                         lon='lon',
+                         lat='lat',
+                         z='elevation',
+                         crs='4326'):
+
+    geometry = [Point(xyz) for xyz in zip(df[lon], df[lat], df[z])]      
+    gdf = gpd.GeoDataFrame(gpd.GeoSeries(geometry), columns=['geometry'], crs={'init':'epsg:'+crs})
+    
+    return gdf
+    
+    
