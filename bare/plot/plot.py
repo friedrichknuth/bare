@@ -6,6 +6,8 @@ import pandas as pd
 import geopandas as gpd
 from osgeo import gdal
 from shapely.geometry import Point
+
+
 import contextily as ctx
 import matplotlib.pyplot as plt
 
@@ -17,6 +19,42 @@ import bare.utils
 import warnings
 warnings.filterwarnings("ignore", message="Palette images with Transparency")
 
+# TODO
+# - Organize functions alphabetically.
+
+def plot_cam(footprint_polygon, camera_positions, crs=3857, camera_type='.xml'):
+    
+    # convert crs for ctx plotting
+    if crs == 3857:
+        footprint_polygon = footprint_polygon.to_crs(epsg=3857)
+        camera_positions = camera_positions.to_crs(epsg=3857)
+     
+    # extract footprint polygon corner coordinates  
+    corners = bare.geospatial.polygon_gdf_to_coordiantes(footprint_polygon)[0][0:-1]
+    df = pd.DataFrame(corners)
+    df.columns = ['lon','lat','altitude']
+    corners = bare.geospatial.df_xyz_coords_to_gdf(df,
+                                                   lon='lon',
+                                                   lat='lat',
+                                                   z='altitude',
+                                                   crs='3857')
+    
+    if camera_type == '.xml':
+        start = camera_positions['geometry'].iloc[0]
+        UL = corners['geometry'].iloc[0]
+        UR = corners['geometry'].iloc[1]
+
+        end = camera_positions['geometry'].iloc[-1]
+        LR = corners['geometry'].iloc[2]
+        LL = corners['geometry'].iloc[3]
+    
+    line0 = bare.geospatial.create_line(start,UL)
+    line1 = bare.geospatial.create_line(start,UR)
+    line2 = bare.geospatial.create_line(end,LR)
+    line3 = bare.geospatial.create_line(end,LL)
+    
+    return line0, line1, line2, line3
+
 
 def prepare_footprint(img_file_name, camera_file, reference_dem):
     gcp_file = bare.utils.generate_corner_coordinates(img_file_name, 
@@ -24,18 +62,18 @@ def prepare_footprint(img_file_name, camera_file, reference_dem):
                                                       reference_dem)
                                                       
                                  
-    polygon_gdf = bare.core.gcp_corners_to_gdf_polygon(gcp_file)
+    footprint_polygon = bare.core.gcp_corners_to_gdf_polygon(gcp_file)
     
-    if not polygon_gdf.empty:
-        return polygon_gdf       
+    if not footprint_polygon.empty:
+        return footprint_polygon      
     else:
         print('No footprint generated for ' + img_file_name)
         return
         
 def plot_footprint(img_file_name, camera_file, 
                    reference_dem, out_dir=None,
-                   basemap='ctx', verbose=False,
-                   viz=False):
+                   basemap='ctx', cam_on=True,
+                   verbose=False, viz=False):
     # TODO
     # - Add condition to plot WV or tsai cameras on plot
     
@@ -46,28 +84,41 @@ def plot_footprint(img_file_name, camera_file,
     out_dir_abs = bare.io.create_dir(out_dir)
     img_base_name = os.path.splitext(os.path.split(img_file_name)[-1])[0]
     
-    polygon_gdf = prepare_footprint(img_file_name, camera_file, reference_dem)
+    footprint_polygon = prepare_footprint(img_file_name, camera_file, reference_dem)
     
     if type(pd.DataFrame()) == pd.core.frame.DataFrame:
         print('Plotting camera footprint.')
         if basemap == 'ctx':
-            polygon_gdf = polygon_gdf.to_crs(epsg=3857)
+            footprint_polygon = footprint_polygon.to_crs(epsg=3857)
         
-        polygon_gdf = bare.geospatial.extract_polygon_centers(polygon_gdf)
+        footprint_polygon = bare.geospatial.extract_polygon_centers(footprint_polygon)
 
         
         fig, ax = plt.subplots(1,figsize=(10,10))
-        polygon_gdf.plot(ax=ax,
+        footprint_polygon.plot(ax=ax,
                          facecolor="none",
                          edgecolor='b')
     
         ## Need to clean up canvas for WV cameras.
-        # bare.utils.wv_xml_to_gdf(camera_file).plot(ax=ax,marker='.')
-    
+        # if os.path.splitext(camera_file)[-1] == '.xml
+        camera_positions = bare.utils.wv_xml_to_gdf(camera_file)
+        camera_positions = camera_positions.to_crs(epsg=3857)
+        camera_positions.plot(ax=ax,marker='.',color='b')
+        
+        if cam_on == True:
+            line0, line1, line2, line3 = plot_cam(footprint_polygon, 
+                                                  camera_positions, 
+                                                  crs=3857, 
+                                                  camera_type='.xml')
+            line0.plot(ax=ax,color='b')
+            line1.plot(ax=ax,color='b')
+            line2.plot(ax=ax,color='b')
+            line3.plot(ax=ax,color='b')
+        
         if basemap == 'ctx':
             ctx.add_basemap(ax)
 
-        for idx, row in polygon_gdf.iterrows():
+        for idx, row in footprint_polygon.iterrows():
             plt.annotate(s=row['file_name'],
                          xy=row['polygon_center'],
                          horizontalalignment='center')

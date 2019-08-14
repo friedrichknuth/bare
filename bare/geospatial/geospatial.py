@@ -1,25 +1,29 @@
 import rasterio
-from shapely.geometry import Point, Polygon
+from shapely.geometry import Point, Polygon, LineString, mapping
 import geopandas as gpd
 
 
-def extract_gpd_geometry(gdf):
+def extract_gpd_geometry(point_gdf):
     """
     Function to extract x, y, z coordinates and add as columns to input geopandas data frame.
     """
     x = []
     y = []
     z = []
-    for i in range(len(gdf)): 
-        x.append(gdf['geometry'].iloc[i].coords[:][0][0])
-        y.append(gdf['geometry'].iloc[i].coords[:][0][1])
-        z.append(gdf['geometry'].iloc[i].coords[:][0][2])
+    for i in range(len(point_gdf)): 
+        x.append(point_gdf['geometry'].iloc[i].coords[:][0][0])
+        y.append(point_gdf['geometry'].iloc[i].coords[:][0][1])
+        z.append(point_gdf['geometry'].iloc[i].coords[:][0][2])
 
-    gdf['x'] = x
-    gdf['y'] = y
-    gdf['z'] = z
+    point_gdf['x'] = x
+    point_gdf['y'] = y
+    point_gdf['z'] = z
 
-
+def polygon_gdf_to_coordiantes(polygon_gdf):
+    geometries = [i for i in polygon_gdf.geometry]
+    all_coords = mapping(geometries[0])["coordinates"]
+    return all_coords
+    
 def geotif2polygon(geotif_name):
     """
     Function to return polygon geodataframe matching the extent and coordinate system of the input geotif.
@@ -54,7 +58,11 @@ def geotif2polygon(geotif_name):
     return geotif_polygon_gdf
 
 
-
+def create_line(point0,point1):
+    line = LineString([point0, point1])
+    line = gpd.GeoDataFrame(gpd.GeoSeries(line),columns=['geometry'],crs='3857')
+    return line
+    
 def df_points_to_polygon_gdf(df, 
                              lon='lon',
                              lat='lat',

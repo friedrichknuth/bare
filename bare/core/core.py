@@ -56,10 +56,6 @@ def gcp_corners_to_gdf_polygon(gcp_file):
     # except:
     #     print(sys.exc_info()[0])
     #     pass
-        
-        
-        
-
 
     polygon_gdf = bare.geospatial.df_points_to_polygon_gdf(df)
     polygon_gdf['file_name'] = os.path.split(df['file_name'][0])[-1]

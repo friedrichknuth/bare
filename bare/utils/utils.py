@@ -121,7 +121,7 @@ def wv_xml_to_gdf(wv_xml):
     
     df = df[0].str.split(expand = True)
     df = df.drop([0,4,5,6,7,8,9,10,11,12],axis=1)
-    df.columns = ['altitude','lon','lat']
+    df.columns = ['lon','lat','altitude']
     df = df.apply(pd.to_numeric)
     
     gdf = bare.geospatial.df_xyz_coords_to_gdf(df, z='altitude', crs='4978')

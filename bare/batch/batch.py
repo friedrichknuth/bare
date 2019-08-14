@@ -43,11 +43,9 @@ def plot_footprints(cam_dir,
             df = df.append(footprint)
         else:
             continue
-    print(df)
     if not df.empty:
         # plot returned footprints
         polygon_gdf = gpd.GeoDataFrame(df, columns=['file_name','geometry'], crs=crs)
-        print(polygon_gdf)
         if basemap == 'ctx':
             polygon_gdf = polygon_gdf.to_crs(epsg=3857)
         
