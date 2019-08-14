@@ -68,33 +68,39 @@ def generate_corner_coordinates(image_file_name,
     """
     Function to generate corner coordinates using cam_gen. Continuous reference DEM for full coverage area must be supplied to approximate footprint.
     """
-    
-    print("Running ASP cam_gen to calculate image footprint on ground from input camera file and reference DEM.")
-    
+ 
     image_file_base_name = os.path.splitext(image_file_name)[0]
     extension = os.path.splitext(camera_file)[-1]
     out_cam = image_file_base_name + '_cam_gen.tsai'
     gcp_file = image_file_base_name + '.gcp'
     
-    if extension == '.tsai':
-        call = ['cam_gen', image_file_name, 
-                '--reference-dem', reference_dem, 
-                '-o', out_cam, 
-                '--gcp-file', gcp_file, 
-                '--sample-file', camera_file,
-                '--input-camera', camera_file]
+    if not os.path.isfile(gcp_file):
+        print("Running ASP cam_gen to calculate image footprint on ground from input camera file and reference DEM.")
+        print('Assuming corner coordinates derived from reference DEM are in EPSG 4326.')
+        
+        if extension == '.tsai':
+            call = ['cam_gen', image_file_name, 
+                    '--reference-dem', reference_dem, 
+                    '-o', out_cam, 
+                    '--gcp-file', gcp_file, 
+                    '--sample-file', camera_file,
+                    '--input-camera', camera_file]
                 
-    elif extension == '.xml':
-        call = ['cam_gen', image_file_name, 
-                '--camera-type', 'opticalbar',
-                '--reference-dem', reference_dem, 
-                '-o', out_cam, 
-                '--gcp-file', gcp_file, 
-                '--sample-file', camera_file,
-                '--input-camera', camera_file]
+        elif extension == '.xml':
+            call = ['cam_gen', image_file_name, 
+                    '--camera-type', 'opticalbar',
+                    '--reference-dem', reference_dem, 
+                    '-o', out_cam, 
+                    '--gcp-file', gcp_file, 
+                    '--sample-file', camera_file,
+                    '--input-camera', camera_file]
       
-    run_command(call, verbose=verbose)
-    return gcp_file
+        run_command(call, verbose=verbose)
+        return gcp_file
+    else:
+        print(gcp_file, 'already exists.')
+        print('Using',gcp_file, 'to generate footprint.')
+        return gcp_file
 
 
 def run_command(command, verbose=False):

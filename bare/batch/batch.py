@@ -3,6 +3,7 @@ import glob
 import pandas as pd
 import matplotlib.pyplot as plt
 import contextily as ctx
+import geopandas as gpd
 
 import bare.io
 import bare.core
@@ -13,6 +14,7 @@ def plot_footprints(cam_dir,
                     img_dir, 
                     reference_dem,
                     out_dir=None,
+                    basemap='ctx',
                     img_file_extension='.tif',
                     cam_file_extension='.tsai'):
                     
@@ -34,36 +36,42 @@ def plot_footprints(cam_dir,
         
         print('\nGenerating footprint for ' + img_base_name + img_file_extension +'.')
         
-        footprint = bare.plot.plot_footprint(img_file_name,
-                                             cam_file,
-                                             reference_dem,
-                                             verbose=False)
-                                 
+        footprint = bare.plot.prepare_footprint(img_file_name, cam_file, reference_dem)
+                 
         if footprint is not None:
+            crs = footprint.crs
             df = df.append(footprint)
         else:
             continue
-    
+    print(df)
     if not df.empty:
         # plot returned footprints
+        polygon_gdf = gpd.GeoDataFrame(df, columns=['file_name','geometry'], crs=crs)
+        print(polygon_gdf)
+        if basemap == 'ctx':
+            polygon_gdf = polygon_gdf.to_crs(epsg=3857)
+        
+        polygon_gdf = bare.geospatial.extract_polygon_centers(polygon_gdf)
+        
+        
         fig, ax = plt.subplots(1,figsize=(10,10))
 
-        df.plot(ax=ax,
+        polygon_gdf.plot(ax=ax,
                 color='b',
                 edgecolor='b',
                 alpha=0.1)
 
-        for idx, row in df.iterrows():
+        for idx, row in polygon_gdf.iterrows():
             plt.annotate(s=row['file_name'],
                          xy=row['polygon_center'],
                          horizontalalignment='center')
 
         # # alternative plotting approaches
-        # df.plot(ax=ax,
+        # polygon_gdf.plot(ax=ax,
         #         facecolor='none',
         #         edgecolor='b')
         #
-        # df.plot(ax=ax,
+        # polygon_gdf.plot(ax=ax,
         #         column='file_name',
         #         legend=True,
         #         facecolor='none',

@@ -38,7 +38,6 @@ def gcp_corners_to_gdf_polygon(gcp_file):
     Function to extract image corner coordinates from gcp file genereated with ASP cam_gen
     and return as polygon within geopandas dataframe.
     """
-    print('Assuming corner coordinates derived from reference DEM are in EPSG 4326')
     # parse ASP gcp file
     
     # try:
