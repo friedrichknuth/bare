@@ -46,8 +46,9 @@ def gcp_corners_to_gdf_polygon(gcp_file):
         print('''
         Unable to intersect all rays with reference DEM. Please ensure reference DEM
         is continuous (no holes) and of sufficent extent. Consider mapprojecting the images
-        to determine required extent.
+        to determine required extent. Deleting gcp file.
         ''')
+        os.remove(gcp_file)
         return
     else:
         df = df.drop([0,4,5,6,10,11],axis=1) # drop sigma columns
@@ -73,8 +74,8 @@ def ba_pointmap_to_gdf(df, ascending=True):
     gdf = gdf.sort_values('mean_residual',ascending=ascending)
     return gdf
     
-def extract_tsai_coordinates(cam_file):
-    with open(cam_file) as f:
+def extract_tsai_coordinates(camera_file):
+    with open(camera_file) as f:
         sub = 'C = '
         lines = [line.rstrip('\n') for line in f]
         coords = [s for s in lines if sub in s]
@@ -85,6 +86,24 @@ def extract_tsai_coordinates(cam_file):
         geometry = Point(lon,lat,alt)
     return geometry
     
+    
+def wv_xml_to_gdf(wv_xml):
+    wv_json = bare.io.xml_to_json(wv_xml)
+    df = pd.DataFrame(wv_json['isd']['EPH']['EPHEMLISTList']['EPHEMLIST'])
+    
+    df = df[0].str.split(expand = True)
+    df = df.drop([0,4,5,6,7,8,9,10,11,12],axis=1)
+    df.columns = ['lon','lat','altitude']
+    df = df.apply(pd.to_numeric)
+    
+    gdf = bare.geospatial.df_xyz_coords_to_gdf(df, z='altitude', crs='4978')
+    
+    return gdf
+    
+def tsai_to_gdf(camera_file):
+    geometry = extract_tsai_coordinates(camera_file)
+    gdf = gpd.GeoDataFrame(gpd.GeoSeries(geometry), columns=['geometry'], crs={'init':'epsg:4978'})
+    return gdf
     
 def iter_extract_tsai_coordinates(cam_dir, extension='.tsai'):
     geometries = []

@@ -22,10 +22,10 @@ warnings.filterwarnings("ignore", message="Palette images with Transparency")
 # TODO
 # - Organize functions alphabetically.
 
-def plot_cam(footprint_polygon, camera_positions, crs=3857, camera_type='.xml'):
+def plot_cam(footprint_polygon, camera_positions, basemap='ctx', camera_type='.xml'):
     
     # convert crs for ctx plotting
-    if crs == 3857:
+    if basemap == 'ctx':
         footprint_polygon = footprint_polygon.to_crs(epsg=3857)
         camera_positions = camera_positions.to_crs(epsg=3857)
      
@@ -39,14 +39,14 @@ def plot_cam(footprint_polygon, camera_positions, crs=3857, camera_type='.xml'):
                                                    z='altitude',
                                                    crs='3857')
     
-    if camera_type == '.xml':
-        start = camera_positions['geometry'].iloc[0]
-        UL = corners['geometry'].iloc[0]
-        UR = corners['geometry'].iloc[1]
+    # if camera_type == '.xml':
+    start = camera_positions['geometry'].iloc[0]
+    UL = corners['geometry'].iloc[0]
+    UR = corners['geometry'].iloc[1]
 
-        end = camera_positions['geometry'].iloc[-1]
-        LR = corners['geometry'].iloc[2]
-        LL = corners['geometry'].iloc[3]
+    end = camera_positions['geometry'].iloc[-1]
+    LR = corners['geometry'].iloc[2]
+    LL = corners['geometry'].iloc[3]
     
     line0 = bare.geospatial.create_line(start,UL)
     line1 = bare.geospatial.create_line(start,UR)
@@ -63,19 +63,18 @@ def prepare_footprint(img_file_name, camera_file, reference_dem):
                                                       
                                  
     footprint_polygon = bare.core.gcp_corners_to_gdf_polygon(gcp_file)
-    
-    if not footprint_polygon.empty:
+    if type(footprint_polygon) == gpd.geodataframe.GeoDataFrame:
         return footprint_polygon      
     else:
         print('No footprint generated for ' + img_file_name)
         return
-        
+
 def plot_footprint(img_file_name, camera_file, 
                    reference_dem, out_dir=None,
                    basemap='ctx', cam_on=True,
                    verbose=False, viz=False):
     # TODO
-    # - Add condition to plot WV or tsai cameras on plot
+    # - Add tsai camera plotting.
     
     """
     Function to plot camera footprints.
@@ -83,32 +82,36 @@ def plot_footprint(img_file_name, camera_file,
                                 
     out_dir_abs = bare.io.create_dir(out_dir)
     img_base_name = os.path.splitext(os.path.split(img_file_name)[-1])[0]
+    cam_extension = os.path.splitext(camera_file)[-1] 
     
     footprint_polygon = prepare_footprint(img_file_name, camera_file, reference_dem)
     
-    if type(pd.DataFrame()) == pd.core.frame.DataFrame:
+    if type(footprint_polygon) == gpd.geodataframe.GeoDataFrame:
         print('Plotting camera footprint.')
         if basemap == 'ctx':
             footprint_polygon = footprint_polygon.to_crs(epsg=3857)
         
         footprint_polygon = bare.geospatial.extract_polygon_centers(footprint_polygon)
 
-        
         fig, ax = plt.subplots(1,figsize=(10,10))
         footprint_polygon.plot(ax=ax,
                          facecolor="none",
                          edgecolor='b')
     
-        ## Need to clean up canvas for WV cameras.
-        # if os.path.splitext(camera_file)[-1] == '.xml
-        camera_positions = bare.utils.wv_xml_to_gdf(camera_file)
-        camera_positions = camera_positions.to_crs(epsg=3857)
-        camera_positions.plot(ax=ax,marker='.',color='b')
-        
         if cam_on == True:
+            if cam_extension == '.xml':
+                camera_positions = bare.core.wv_xml_to_gdf(camera_file)
+            
+            elif cam_extension == '.tsai':
+                camera_positions = bare.core.tsai_to_gdf(camera_file)
+                
+            if basemap == 'ctx':
+                camera_positions = camera_positions.to_crs(epsg=3857)
+            camera_positions.plot(ax=ax,marker='.',color='b')
+            
             line0, line1, line2, line3 = plot_cam(footprint_polygon, 
                                                   camera_positions, 
-                                                  crs=3857, 
+                                                  basemap=basemap, 
                                                   camera_type='.xml')
             line0.plot(ax=ax,color='b')
             line1.plot(ax=ax,color='b')

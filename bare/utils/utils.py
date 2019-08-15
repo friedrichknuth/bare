@@ -6,6 +6,7 @@ import os
 from distutils.spawn import find_executable
 import multiprocessing
 from functools import partial
+from osgeo import gdal
 
 import bare.io
 import bare.geospatial
@@ -115,18 +116,39 @@ def run_command(command, verbose=False):
         if verbose == True:
             print(line)
 
-def wv_xml_to_gdf(wv_xml):
-    wv_json = bare.io.xml_to_json(wv_xml)
-    df = pd.DataFrame(wv_json['isd']['EPH']['EPHEMLISTList']['EPHEMLIST'])
+
+def download_srtm(LLLON,LLLAT,URLON,ULLAT):
+    # TODO
+    # - Add docstring, comments and useful exceptions.
+    import elevation
+    run_command(['eio', 'selfcheck'], verbose=True)
+    print('Downloading SRTM DEM data.')
     
-    df = df[0].str.split(expand = True)
-    df = df.drop([0,4,5,6,7,8,9,10,11,12],axis=1)
-    df.columns = ['lon','lat','altitude']
-    df = df.apply(pd.to_numeric)
+    bare.io.create_dir('./reference_dem')
     
-    gdf = bare.geospatial.df_xyz_coords_to_gdf(df, z='altitude', crs='4978')
+    cache_dir='./reference_dem/'
+    product='SRTM3'
+    dem_bounds = (LLLON, LLLAT, URLON, ULLAT)
     
-    return gdf
+    elevation.seed(bounds=dem_bounds, 
+                   cache_dir=cache_dir, 
+                   product=product, 
+                   max_download_tiles=999)
+            
+    call = ['gdalbuildvrt', 
+            './reference_dem/elevation/SRTM3/cache/srtm.vrt', 
+            './reference_dem/SRTM3/cache/*.tif']
+    run_command(call, verbose=True)
+
+
+    ds = gdal.Open('./reference_dem/SRTM3/cache/srtm.vrt')
+    ds = gdal.Translate('./reference_dem/SRTM3/cache/srtm_URb_subset.vrt', 
+                        ds, 
+                        projWin = [LLLON, ULLAT, URLON, LLLAT])
+                        
+    return './reference_dem/SRTM3/cache/srtm_subset.vrt'
+    
+
     
     
     

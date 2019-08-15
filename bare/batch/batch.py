@@ -45,31 +45,31 @@ def plot_footprints(cam_dir,
             continue
     if not df.empty:
         # plot returned footprints
-        polygon_gdf = gpd.GeoDataFrame(df, columns=['file_name','geometry'], crs=crs)
+        footprints = gpd.GeoDataFrame(df, columns=['file_name','geometry'], crs=crs)
         if basemap == 'ctx':
-            polygon_gdf = polygon_gdf.to_crs(epsg=3857)
+            footprints = footprints.to_crs(epsg=3857)
         
-        polygon_gdf = bare.geospatial.extract_polygon_centers(polygon_gdf)
+        footprints = bare.geospatial.extract_polygon_centers(footprints)
         
         
         fig, ax = plt.subplots(1,figsize=(10,10))
 
-        polygon_gdf.plot(ax=ax,
+        footprints.plot(ax=ax,
                 color='b',
                 edgecolor='b',
                 alpha=0.1)
 
-        for idx, row in polygon_gdf.iterrows():
+        for idx, row in footprints.iterrows():
             plt.annotate(s=row['file_name'],
                          xy=row['polygon_center'],
                          horizontalalignment='center')
 
         # # alternative plotting approaches
-        # polygon_gdf.plot(ax=ax,
+        # footprints.plot(ax=ax,
         #         facecolor='none',
         #         edgecolor='b')
         #
-        # polygon_gdf.plot(ax=ax,
+        # footprints.plot(ax=ax,
         #         column='file_name',
         #         legend=True,
         #         facecolor='none',
