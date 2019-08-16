@@ -21,6 +21,8 @@ warnings.filterwarnings("ignore", message="Palette images with Transparency")
 
 # TODO
 # - Organize functions alphabetically.
+# - Use class structure to make ctx a global property 
+#   instead of repeating condition throughout
 
 def plot_cam(footprint_polygon, camera_positions, basemap='ctx', camera_type='.xml'):
     
@@ -72,7 +74,7 @@ def prepare_footprint(img_file_name, camera_file, reference_dem):
 def plot_footprint(img_file_name, camera_file, 
                    reference_dem, out_dir=None,
                    basemap='ctx', cam_on=True,
-                   verbose=False, viz=False):
+                   verbose=False):
     # TODO
     # - Add tsai camera plotting.
     
@@ -100,10 +102,34 @@ def plot_footprint(img_file_name, camera_file,
     
         if cam_on == True:
             if cam_extension == '.xml':
+                ax.set_title('camera footprint and scanner positions')
                 camera_positions = bare.core.wv_xml_to_gdf(camera_file)
-            
+                if basemap == 'ctx':
+                    camera_positions = camera_positions.to_crs(epsg=3857)
+                # add coordinates as seperate columns to gdf
+                bare.geospatial.extract_gpd_geometry(camera_positions)
+                # annotate start and end of aquisition
+                plt.annotate(s='start',
+                             xy=(camera_positions.iloc[0].x, camera_positions.iloc[0].y),
+                             horizontalalignment='center')
+                             
+                plt.annotate(s='end',
+                             xy=(camera_positions.iloc[-1].x, camera_positions.iloc[-1].y),
+                             horizontalalignment='center')
+                                  
             elif cam_extension == '.tsai':
+                ax.set_title('camera footprint and position')
                 camera_positions = bare.core.tsai_to_gdf(camera_file)
+                if basemap == 'ctx':
+                    camera_positions = camera_positions.to_crs(epsg=3857)
+                    
+                # # Not sure if this is useful to be labeled for tsai.
+                # # add coordinates as seperate columns to gdf
+                # bare.geospatial.extract_gpd_geometry(camera_positions)
+                # # annotate camera position
+                # plt.annotate(s='camera position',
+                #              xy=(camera_positions.iloc[-1].x, camera_positions.iloc[-1].y),
+                #              horizontalalignment='center')
                 
             if basemap == 'ctx':
                 camera_positions = camera_positions.to_crs(epsg=3857)
@@ -118,6 +144,9 @@ def plot_footprint(img_file_name, camera_file,
             line2.plot(ax=ax,color='b')
             line3.plot(ax=ax,color='b')
         
+        else:
+            ax.set_title('camera footprint')
+            
         if basemap == 'ctx':
             ctx.add_basemap(ax)
 
@@ -126,7 +155,7 @@ def plot_footprint(img_file_name, camera_file,
                          xy=row['polygon_center'],
                          horizontalalignment='center')
              
-        ax.set_title('camera footprint')
+        
 
         if out_dir_abs is not None:
             out = os.path.join(out_dir_abs, img_base_name+'_footprint.png')
@@ -138,7 +167,9 @@ def plot_footprint(img_file_name, camera_file,
         pass
     
 def ip_plot(img_file_name, ip_csv_fn, out_dir_abs=None, scale=1.0):
-
+    # TODO
+    # - Take .vwip file as input and generate csv if not exists.
+    
     # create output directory
     out_dir_abs = bare.io.create_dir(out_dir_abs)
     
@@ -186,6 +217,9 @@ def ip_plot(img_file_name, ip_csv_fn, out_dir_abs=None, scale=1.0):
 
 
 def mp_plot(img1_fn, img2_fn, match_csv_fn, out_dir_abs=None, scale=1.0):
+    # TODO
+    # - Take .match file as input and generate csv if not exists.
+    
     '''
     Function to generate plots fro two images and their corresponding match csv.
     '''
@@ -199,8 +233,8 @@ def mp_plot(img1_fn, img2_fn, match_csv_fn, out_dir_abs=None, scale=1.0):
     match_img1_name = os.path.splitext(os.path.split(img1_fn)[-1])[0]
     match_img2_name = os.path.splitext(os.path.split(img2_fn)[-1])[0]
 
-    fig, ax = plt.subplots(1,2,figsize=(10,6))
-    fig.suptitle('Match points:\n%s' % os.path.split(match_csv_fn)[-1])
+    fig, ax = plt.subplots(1,2,figsize=(18,10))
+    fig.suptitle('match points\n' + os.path.split(match_csv_fn)[-1])
 
     buf_xsize = None
     buf_ysize = None
@@ -247,7 +281,8 @@ def mp_plot(img1_fn, img2_fn, match_csv_fn, out_dir_abs=None, scale=1.0):
         plt.show()
   
 def plot_dxdy(ba_dir, out_dir='qc_plots/dxdy'):
-
+    # TODO
+    # - Break this into a dedicated function and move iteration to batch
     print('plotting dxdy...')
 
     # create output directory
@@ -302,8 +337,11 @@ def plot_residuals(ba_dir, out_dir=None, ascending=True, basemap='ctx', glacier_
     initial_gdf = bare.core.ba_pointmap_to_gdf(initial_df, ascending=ascending)
     final_gdf = bare.core.ba_pointmap_to_gdf(final_df, ascending=ascending)
 
-
-    fig, ax = plt.subplots(1,2,figsize=(10,5), sharex=True, sharey=True)
+    # TODO
+    # - Filter outliers on 'after' plot to make sharex, sharey more useful. Right now the
+    #   extent may reach accross the globe. See examples.
+    # fig, ax = plt.subplots(1,2,figsize=(10,5), sharex=True, sharey=True)
+    fig, ax = plt.subplots(1,2,figsize=(10,5))
     clim = np.percentile(initial_gdf['mean_residual'].values,(2,98))
 
     # add plots to show number of images per match point

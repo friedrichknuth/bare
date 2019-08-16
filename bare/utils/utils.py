@@ -117,35 +117,37 @@ def run_command(command, verbose=False):
             print(line)
 
 
-def download_srtm(LLLON,LLLAT,URLON,ULLAT):
+def download_srtm(LLLON,LLLAT,URLON,URLAT):
     # TODO
     # - Add docstring, comments and useful exceptions.
     import elevation
     run_command(['eio', 'selfcheck'], verbose=True)
     print('Downloading SRTM DEM data.')
-    
+
     bare.io.create_dir('./reference_dem')
-    
+
     cache_dir='./reference_dem/'
     product='SRTM3'
-    dem_bounds = (LLLON, LLLAT, URLON, ULLAT)
-    
-    elevation.seed(bounds=dem_bounds, 
-                   cache_dir=cache_dir, 
-                   product=product, 
+    dem_bounds = (LLLON, LLLAT, URLON, URLAT)
+
+    elevation.seed(bounds=dem_bounds,
+                   cache_dir=cache_dir,
+                   product=product,
                    max_download_tiles=999)
-            
-    call = ['gdalbuildvrt', 
-            './reference_dem/elevation/SRTM3/cache/srtm.vrt', 
+
+    call = ['gdalbuildvrt',
+            './reference_dem/elevation/SRTM3/cache/srtm.vrt',
             './reference_dem/SRTM3/cache/*.tif']
     run_command(call, verbose=True)
 
 
     ds = gdal.Open('./reference_dem/SRTM3/cache/srtm.vrt')
-    ds = gdal.Translate('./reference_dem/SRTM3/cache/srtm_URb_subset.vrt', 
-                        ds, 
-                        projWin = [LLLON, ULLAT, URLON, LLLAT])
-                        
+    ds = gdal.Translate('./reference_dem/SRTM3/cache/srtm_URb_subset.vrt',
+                        ds, projWin = [LLLON, URLAT, URLON, LLLAT])
+
+    print((LLLON, LLLAT, URLON, URLAT))
+    print([LLLON, URLAT, URLON, LLLAT])
+
     return './reference_dem/SRTM3/cache/srtm_subset.vrt'
     
 
