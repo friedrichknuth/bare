@@ -4,12 +4,14 @@ Python library to evaluate outputs from [NASA Ames Stereo Pipeline](https://ti.a
 
 
 ### Features
-
-- plot xyz tsai camera positions before and after bundle adjustment
 - plot detected interest points over images
 - plot match points found between two images
 - plot dxdy after bundle adjustment
+- plot xyz tsai camera positions before and after bundle adjustment
 - plot residuals after bundle adjustment
+- plot WV3 image footprint and scanner positions
+- plot tsai image footprint and camera positions
+- use batch functions to plot multiple products at once
 
 ### Examples
 
@@ -24,7 +26,7 @@ $ pip install -e .
 
 ### Contributing
 
-_bare_ contains modular libraries that can accomodate additional quality control products, as well as camera model formats. Currently, the library only accomodates tsai camera model inputs.
+_bare_ contains modular libraries that can accomodate additional quality control products, as well as camera model formats. Currently, the library only accomodates tsai and WV3 camera model inputs.
 
 For contribution guidelines and the author's TODO list, please click [here](./CONTRIBUTING.md).
 
