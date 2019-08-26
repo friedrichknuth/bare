@@ -32,7 +32,7 @@ def create_overview(img_file_name, scale=8):
         
     else:
         # build call
-        call = "gdaladdo -ro -r average --config COMPRESS_OVERVIEW LZW --config BIGTIFF_OVERVIEW YES".split()
+        call = 'gdaladdo -ro -r average --config COMPRESS_OVERVIEW LZW --config BIGTIFF_OVERVIEW YES'.split()
         call.append(img_file_name)
         call.append(str(scale))
     
@@ -122,7 +122,7 @@ def download_srtm(LLLON,LLLAT,URLON,URLAT,
                   verbose=True):
     # TODO
     # - Add function to determine extent automatically from input cameras
-    # - Add docstring, comments and useful exceptions.
+    # - Make geoid adjustment and converstion to UTM optional
     import elevation
     
     run_command(['eio', 'selfcheck'], verbose=verbose)
@@ -154,17 +154,22 @@ def download_srtm(LLLON,LLLAT,URLON,URLAT,
                         ds, 
                         projWin = [LLLON, URLAT, URLON, LLLAT])
                         
-                        
-    # Apply DEM geoid
-    call = ['dem_geoid','--reverse-adjustment',vrt_subset_file_name]
+    
+    # Adjust from EGM96 geoid to WGS84 ellipsoid
+    adjusted_vrt_subset_file_name_prefix = os.path.join(output_dir,'SRTM3/cache/srtm_subset')
+    call = ['dem_geoid','--reverse-adjustment', vrt_subset_file_name, '-o', adjusted_vrt_subset_file_name_prefix]
     run_command(call, verbose=verbose)
     
-    adjusted_vrt_subset_file_name = os.path.join(output_dir,'SRTM3/cache/srtm_subset-adj.vrt')
+    adjusted_vrt_subset_file_name = adjusted_vrt_subset_file_name_prefix+'-adj.tif'
 
-    return adjusted_vrt_subset_file_name
+    # Get UTM EPSG code
+    epsg_code = hsfm.geospatial.wgs_lon_lat_to_epsg_code(LLLON, LLLAT)
     
-
+    # Convert to UTM
+    utm_vrt_subset_file_name = os.path.join(output_dir,'SRTM3/cache/srtm_subset_utm_geoid_adj.tif')
+    call = 'gdalwarp -co COMPRESS=LZW -co TILED=YES -co BIGTIFF=IF_SAFER -dstnodata -9999 -r cubic -t_srs EPSG:' + epsg_code
+    call = call.split()
+    call.extend([adjusted_vrt_subset_file_name,utm_vrt_subset_file_name])
+    run_command(call, verbose=verbose)
     
-    
-    
-    
+    return utm_vrt_subset_file_name
