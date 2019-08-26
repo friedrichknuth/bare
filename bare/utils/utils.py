@@ -117,16 +117,20 @@ def run_command(command, verbose=False):
             print(line)
 
 
-def download_srtm(LLLON,LLLAT,URLON,URLAT):
+def download_srtm(LLLON,LLLAT,URLON,URLAT,
+                  output_dir='./data/reference_dems/',
+                  verbose=True):
     # TODO
+    # - Add function to determine extent automatically from input cameras
     # - Add docstring, comments and useful exceptions.
     import elevation
-    run_command(['eio', 'selfcheck'], verbose=True)
-    print('Downloading SRTM DEM data.')
+    
+    run_command(['eio', 'selfcheck'], verbose=verbose)
+    print('Downloading SRTM DEM data...')
 
-    bare.io.create_dir('./reference_dem')
+    hsfm.io.create_dir(output_dir)
 
-    cache_dir='./reference_dem/'
+    cache_dir=output_dir
     product='SRTM3'
     dem_bounds = (LLLON, LLLAT, URLON, URLAT)
 
@@ -135,20 +139,29 @@ def download_srtm(LLLON,LLLAT,URLON,URLAT):
                    product=product,
                    max_download_tiles=999)
 
-    call = ['gdalbuildvrt',
-            './reference_dem/elevation/SRTM3/cache/srtm.vrt',
-            './reference_dem/SRTM3/cache/*.tif']
-    run_command(call, verbose=True)
+    tifs = glob.glob(os.path.join(output_dir,'SRTM3/cache/','*tif'))
+    
+    vrt_file_name = os.path.join(output_dir,'SRTM3/cache/srtm.vrt')
+    
+    call = ['gdalbuildvrt', vrt_file_name]
+    call.extend(tifs)
+    run_command(call, verbose=verbose)
 
+    
+    ds = gdal.Open(vrt_file_name)
+    vrt_subset_file_name = os.path.join(output_dir,'SRTM3/cache/srtm_subset.vrt')
+    ds = gdal.Translate(vrt_subset_file_name,
+                        ds, 
+                        projWin = [LLLON, URLAT, URLON, LLLAT])
+                        
+                        
+    # Apply DEM geoid
+    call = ['dem_geoid','--reverse-adjustment',vrt_subset_file_name]
+    run_command(call, verbose=verbose)
+    
+    adjusted_vrt_subset_file_name = os.path.join(output_dir,'SRTM3/cache/srtm_subset-adj.vrt')
 
-    ds = gdal.Open('./reference_dem/SRTM3/cache/srtm.vrt')
-    ds = gdal.Translate('./reference_dem/SRTM3/cache/srtm_URb_subset.vrt',
-                        ds, projWin = [LLLON, URLAT, URLON, LLLAT])
-
-    print((LLLON, LLLAT, URLON, URLAT))
-    print([LLLON, URLAT, URLON, LLLAT])
-
-    return './reference_dem/SRTM3/cache/srtm_subset.vrt'
+    return adjusted_vrt_subset_file_name
     
 
     

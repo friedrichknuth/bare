@@ -10,7 +10,7 @@ dependencies:
   - contextily
   - xmltodict
   - pip
+  - gdal
   - pip:
-    - gdal
     - elevation
   # - "--editable=git+https://github.com/friedrichknuth/bare.git#egg=bare"

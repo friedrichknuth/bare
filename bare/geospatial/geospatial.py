@@ -97,4 +97,3 @@ def df_xyz_coords_to_gdf(df,
     
     return gdf
     
-    
