@@ -63,6 +63,8 @@ def prepare_footprint(img_file_name, camera_file, reference_dem):
                                                       camera_file, 
                                                       reference_dem)
                                                       
+    print(gcp_file)
+                                                      
                                  
     footprint_polygon = bare.core.gcp_corners_to_gdf_polygon(gcp_file)
     if type(footprint_polygon) == gpd.geodataframe.GeoDataFrame:

@@ -7,7 +7,9 @@ from distutils.spawn import find_executable
 import multiprocessing
 from functools import partial
 from osgeo import gdal
+import rasterio
 
+import bare.io
 import bare.io
 import bare.geospatial
 
@@ -61,7 +63,7 @@ def parallel_create_overview(image_list, scale=8, threads=8):
 
 def generate_corner_coordinates(image_file_name, 
                                 camera_file, 
-                                reference_dem, 
+                                reference_dem_file_name, 
                                 verbose=False):
     # TODO
     # - Make reference_dem optional and download coarse global DEM for target area if not supplied.
@@ -75,13 +77,21 @@ def generate_corner_coordinates(image_file_name,
     out_cam = image_file_base_name + '_cam_gen.tsai'
     gcp_file = image_file_base_name + '.gcp'
     
+    # check reference dem crs
+    geotif = rasterio.open(reference_dem_file_name)
+    crs = str(geotif.crs)
+    if crs[5:] != '4326':
+        print('trasforming')
+        reference_dem_file_name = transform_dem(reference_dem_file_name, verbose=verbose)
+        
+    
     if not os.path.isfile(gcp_file):
         print("Running ASP cam_gen to calculate image footprint on ground from input camera file and reference DEM.")
         print('Assuming corner coordinates derived from reference DEM are in EPSG 4326.')
         
         if extension == '.tsai':
             call = ['cam_gen', image_file_name, 
-                    '--reference-dem', reference_dem, 
+                    '--reference-dem', reference_dem_file_name, 
                     '-o', out_cam, 
                     '--gcp-file', gcp_file, 
                     '--sample-file', camera_file,
@@ -90,7 +100,7 @@ def generate_corner_coordinates(image_file_name,
         elif extension == '.xml':
             call = ['cam_gen', image_file_name, 
                     '--camera-type', 'opticalbar',
-                    '--reference-dem', reference_dem, 
+                    '--reference-dem', reference_dem_file_name, 
                     '-o', out_cam, 
                     '--gcp-file', gcp_file, 
                     '--sample-file', camera_file,
@@ -118,7 +128,7 @@ def run_command(command, verbose=False):
 
 
 def download_srtm(LLLON,LLLAT,URLON,URLAT,
-                  output_dir='./data/reference_dems/',
+                  out_dir='./data/reference_dem/',
                   verbose=True):
     # TODO
     # - Add function to determine extent automatically from input cameras
@@ -172,4 +182,22 @@ def download_srtm(LLLON,LLLAT,URLON,URLAT,
     call.extend([adjusted_vrt_subset_file_name,utm_vrt_subset_file_name])
     run_command(call, verbose=verbose)
     
-    return utm_vrt_subset_file_name
+    # Cleanup
+    print('Cleaning up...','Reference DEM available at', out)
+    out = os.path.join(output_dir,os.path.split(utm_vrt_subset_file_name)[-1])
+    os.rename(utm_vrt_subset_file_name, out)
+    shutil.rmtree(os.path.join(output_dir,'SRTM3/'))
+    
+    return out
+
+
+def transform_dem(dem_file_name, epsg_code='4326', verbose=False):
+    
+    out_dir,_,_= bare.io.split_file(dem_file_name)
+    out = os.path.join(out_dir, 'dem_wgs84.tif')
+    
+    call = 'gdalwarp -co COMPRESS=LZW -co TILED=YES -co BIGTIFF=IF_SAFER -dstnodata -9999 -r cubic -t_srs EPSG:' + epsg_code
+    call = call.split()
+    call.extend([dem_file_name,out])
+    run_command(call, verbose=verbose)
+    return out

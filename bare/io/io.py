@@ -16,3 +16,10 @@ def xml_to_json(xml_file_name):
         xml_as_json = json.loads(json.dumps(xmltodict.parse(f.read())))
         
     return xml_as_json
+    
+def split_file(file_path_and_name):
+    file_path = os.path.split(file_path_and_name)[0]
+    file_name = os.path.split(file_path_and_name)[-1].split('.')[0]
+    file_extension = '.'+os.path.split(file_path_and_name)[-1].split('.')[-1]
+    
+    return file_path, file_name, file_extension

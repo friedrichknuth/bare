@@ -43,6 +43,7 @@ def plot_footprints(cam_dir,
             df = df.append(footprint)
         else:
             continue
+            
     if not df.empty:
         # plot returned footprints
         footprints = gpd.GeoDataFrame(df, columns=['file_name','geometry'], crs=crs)
