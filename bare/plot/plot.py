@@ -58,10 +58,11 @@ def plot_cam(footprint_polygon, camera_positions, basemap='ctx', camera_type='.x
     return line0, line1, line2, line3
 
 
-def prepare_footprint(img_file_name, camera_file, reference_dem):
+def prepare_footprint(img_file_name, camera_file, reference_dem, out_dir=None):
     gcp_file = bare.utils.generate_corner_coordinates(img_file_name, 
                                                       camera_file, 
-                                                      reference_dem)
+                                                      reference_dem,
+                                                      out_dir=out_dir)
                                                       
     print(gcp_file)
                                                       

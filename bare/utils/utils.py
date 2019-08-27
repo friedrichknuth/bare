@@ -10,7 +10,6 @@ from osgeo import gdal
 import rasterio
 
 import bare.io
-import bare.io
 import bare.geospatial
 
 
@@ -63,7 +62,8 @@ def parallel_create_overview(image_list, scale=8, threads=8):
 
 def generate_corner_coordinates(image_file_name, 
                                 camera_file, 
-                                reference_dem_file_name, 
+                                reference_dem_file_name,
+                                out_dir=None,
                                 verbose=False):
     # TODO
     # - Make reference_dem optional and download coarse global DEM for target area if not supplied.
@@ -71,17 +71,21 @@ def generate_corner_coordinates(image_file_name,
     """
     Function to generate corner coordinates using cam_gen. Continuous reference DEM for full coverage area must be supplied to approximate footprint.
     """
+    
+    # create output directory
+    out_dir_abs = bare.io.create_dir(out_dir)
  
-    image_file_base_name = os.path.splitext(image_file_name)[0]
-    extension = os.path.splitext(camera_file)[-1]
-    out_cam = image_file_base_name + '_cam_gen.tsai'
-    gcp_file = image_file_base_name + '.gcp'
+    # image_file_base_name = os.path.splitext(image_file_name)[0]
+    camera_extension = os.path.splitext(camera_file)[-1]
+    image_file_path, image_file_base_name, image_file_extension = bare.io.split_file(image_file_name)
+    
+    out_cam = os.path.join(out_dir_abs, image_file_base_name + '_cam_gen.tsai')
+    gcp_file = os.path.join(out_dir_abs, image_file_base_name + '.gcp')
     
     # check reference dem crs
     geotif = rasterio.open(reference_dem_file_name)
     crs = str(geotif.crs)
     if crs[5:] != '4326':
-        print('trasforming')
         reference_dem_file_name = transform_dem(reference_dem_file_name, verbose=verbose)
         
     
@@ -89,7 +93,7 @@ def generate_corner_coordinates(image_file_name,
         print("Running ASP cam_gen to calculate image footprint on ground from input camera file and reference DEM.")
         print('Assuming corner coordinates derived from reference DEM are in EPSG 4326.')
         
-        if extension == '.tsai':
+        if camera_extension == '.tsai':
             call = ['cam_gen', image_file_name, 
                     '--reference-dem', reference_dem_file_name, 
                     '-o', out_cam, 
@@ -97,7 +101,7 @@ def generate_corner_coordinates(image_file_name,
                     '--sample-file', camera_file,
                     '--input-camera', camera_file]
                 
-        elif extension == '.xml':
+        elif camera_extension == '.xml':
             call = ['cam_gen', image_file_name, 
                     '--camera-type', 'opticalbar',
                     '--reference-dem', reference_dem_file_name, 

@@ -14,6 +14,7 @@ def plot_footprints(cam_dir,
                     img_dir, 
                     reference_dem,
                     out_dir=None,
+                    show=False,
                     basemap='ctx',
                     img_file_extension='.tif',
                     cam_file_extension='.tsai'):
@@ -21,7 +22,8 @@ def plot_footprints(cam_dir,
     """
     Function to plot image footprints from images and camera files
     """
-    # create output directory
+                    
+    # create output directory               
     out_dir_abs = bare.io.create_dir(out_dir)
     
     # get list of camera files
@@ -36,7 +38,10 @@ def plot_footprints(cam_dir,
         
         print('\nGenerating footprint for ' + img_base_name + img_file_extension +'.')
         
-        footprint = bare.plot.prepare_footprint(img_file_name, cam_file, reference_dem)
+        footprint = bare.plot.prepare_footprint(img_file_name, 
+                                                cam_file, 
+                                                reference_dem, 
+                                                out_dir=out_dir)
                  
         if footprint is not None:
             crs = footprint.crs
@@ -82,7 +87,7 @@ def plot_footprints(cam_dir,
         ax.set_title('camera footprints')
 
         # visualize or write to file if out_dir_abs provided
-        if out_dir_abs is not None:
+        if show == False:
             out = os.path.join(out_dir_abs, 'footprints.png')
             fig.savefig(out, bbox_inches = "tight")
             plt.close()
