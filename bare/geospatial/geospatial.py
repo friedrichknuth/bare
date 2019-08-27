@@ -109,3 +109,49 @@ def wgs_lon_lat_to_epsg_code(lon, lat):
     else:
         epsg_code = '327' + utm_band
     return epsg_code
+    
+    
+def rescale_geotif_to_file(geotif_file_name, scale_factor):
+    
+    # TODO
+    # - Get no data value instead of hard code -9999
+    
+    # create output file name
+    file_path, file_name, file_extension = hsfm.io.split_file(geotif_file_name)
+    output_file = os.path.join(file_path, file_name +'_sub'+str(scale_factor)+'.tif')
+    
+    # downsample array
+    img = downsample_geotif_to_array(geotif_file_name, scale_factor)
+
+    # get new shape
+    [cols,rows] = img.shape
+
+    # preserve information about original file
+    transform = img_ds.GetGeoTransform()
+    projection = img_ds.GetProjection()
+    nodatavalue = -9999
+    # nodatavalue = img_ds.GetNoDataValue() # get attributes property broken in gdal 2.4
+
+    # set gdal GTiff driver
+    outdriver = gdal.GetDriverByName("GTiff")
+
+    # create output file, write data and add metadata
+    outdata = outdriver.Create(output_file, rows, cols, 1, gdal.GDT_Byte)
+    outdata.GetRasterBand(1).WriteArray(img)
+    outdata.GetRasterBand(1).SetNoDataValue(nodatavalue)
+    outdata.SetGeoTransform(transform)
+    outdata.SetProjection(projection)
+    
+    
+def downsample_geotif_to_array(img_file_name, scale):
+    """
+    Function to downsample image and return as numpy array.
+    """
+    img_ds = gdal.Open(img_file_name)
+    
+    buf_xsize = int(round(img_ds.RasterXSize/scale))
+    buf_ysize = int(round(img_ds.RasterYSize/scale))
+    
+    img = img_ds.ReadAsArray(buf_xsize=buf_xsize, buf_ysize=buf_ysize)
+    
+    return img
