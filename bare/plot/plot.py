@@ -282,7 +282,8 @@ def mp_plot(img1_fn, img2_fn, match_csv_fn, out_dir_abs=None, scale=1.0):
         plt.close()
     else:
         plt.show()
-  
+
+
 def plot_dxdy(ba_dir, out_dir='qc_plots/dxdy'):
     # TODO
     # - Break this into a dedicated function and move iteration to batch
@@ -392,12 +393,10 @@ def plot_residuals(ba_dir, out_dir=None, ascending=True, basemap='ctx', glacier_
 def plot_tsai_camera_positions_before_and_after(ba_dir,
                                                 input_cam_dir, 
                                                 extension='.tsai',
-                                                glacier_shape_fn=None,
-                                                out_dir='qc_plots/camera_positions'):
+                                                output_directory=None):
 
     # TODO
     # - Add if then flow to accomodate final.tsai camera models in bundle adjust directory.
-    # - Add exception to increase extent until stamen tile can be retrieved, even when no glacier shape file provided.
 
     '''
 
@@ -408,9 +407,8 @@ def plot_tsai_camera_positions_before_and_after(ba_dir,
     a stamen tile using contextily.
 
     '''
-    print('plotting tsai camera positions before and after bundle adjustment...')
 
-    out_dir_abs = bare.io.create_dir(out_dir)
+    output_directory = bare.io.create_dir(output_directory)
                                             
     positions_before_ba = bare.core.iter_extract_tsai_coordinates(input_cam_dir,
                                         extension=extension)
@@ -437,21 +435,20 @@ def plot_tsai_camera_positions_before_and_after(ba_dir,
                             cmap='viridis',
                             legend=True, 
                             edgecolor='k')
-    if glacier_shape_fn:
-        glacier_shape = gpd.read_file(glacier_shape_fn)
-        glacier_shape = glacier_shape.to_crs({'init' :'epsg:3857'})
-        glacier_shape.plot(ax=ax[0],alpha=0.5)
-        glacier_shape.plot(ax=ax[1],alpha=0.5)
+
     
-    ctx.add_basemap(ax[0])
-    ctx.add_basemap(ax[1])
+    add_ctx_basemap(ax[0],15)
+    add_ctx_basemap(ax[1],15)
 
     ax[0].set_title('xy camera positions before bundle adjust')
     ax[1].set_title('xy camera positions after bundle adjust')
 
-    out = os.path.join(out_dir_abs,'xy_camera_positions_before_and_after_bundle_adjust.png')
-    fig.savefig(out, bbox_inches = "tight")
-    plt.close()
+    if output_directory != None:
+        out = os.path.join(output_directory,'xy_camera_positions_before_and_after_bundle_adjust.png')
+        fig.savefig(out, quality=85, dpi=300, bbox_inches="tight")
+        plt.close()
+    else:
+        plt.show() 
 
     # plot Z
     fig, ax = plt.subplots(1,2,figsize=(20,10),
@@ -472,11 +469,45 @@ def plot_tsai_camera_positions_before_and_after(ba_dir,
     ax[1].set_title('z position after bundle_adjust')
     ax[1].set_xlabel('\nimage')
     ax[1].set_ylabel('height above datum (m)')
+    
+    if output_directory != None:
+        out = os.path.join(output_directory,'z_camera_positions_before_and_after_bundle_adjust.png')
+        fig.savefig(out, quality=85, dpi=300, bbox_inches="tight")
+        plt.close()
+    else:
+        plt.show() 
 
-    out = os.path.join(out_dir_abs,'z_camera_positions_before_and_after_bundle_adjust.png')
-    fig.savefig(out, bbox_inches = "tight")
-    plt.close()
     
+def add_ctx_basemap(ax, zoom, url='https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}'):
+    xmin, xmax, ymin, ymax = ax.axis()
+    basemap, extent = ctx.bounds2img(xmin, ymin, xmax, ymax, zoom=zoom, url=url)
+    ax.imshow(basemap, extent=extent, interpolation='bilinear')
+    # restore original x/y limits
+    ax.axis((xmin, xmax, ymin, ymax))
     
-                             
+def plot_camera_models(camera_model_directory,
+                       extension='.tsai',
+                       output_directory=None):
+    
+    output_directory = bare.io.create_dir(output_directory)
+    
+    camera_positions = bare.core.iter_extract_tsai_coordinates(camera_model_directory,
+                                                                  extension=extension)
+    camera_positions = camera_positions.to_crs({'init' :'epsg:3857'})
+                       
+    bare.geospatial.extract_gpd_geometry(camera_positions)
+    fig, ax = plt.subplots(figsize=(10,10))
+    camera_positions.plot(column='z',
+                             ax=ax,
+                             cmap='winter',
+                             legend=True, 
+                             edgecolor='k')
+    add_ctx_basemap(ax,15)
+
+    if output_directory != None:
+        out = os.path.join(output_directory,'camera_xy_positions.jpg')
+        fig.savefig(out, quality=85, dpi=300, bbox_inches="tight")
+        plt.close()
+    else:
+        plt.show()           
                              
