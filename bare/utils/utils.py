@@ -112,9 +112,11 @@ def generate_corner_coordinates(image_file_name,
       
         run_command(call, verbose=verbose)
         return gcp_file
+    
     else:
-        print(gcp_file, 'already exists.')
-        print('Using',gcp_file, 'to generate footprint.')
+        if verbose==True:
+            print(gcp_file, 'already exists.')
+            print('Using',gcp_file, 'to generate footprint.')
         return gcp_file
 
 

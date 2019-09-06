@@ -15,6 +15,7 @@ def plot_footprints(cam_dir,
                     reference_dem,
                     out_dir=None,
                     show=False,
+                    verbose=False,
                     basemap='ctx',
                     img_file_extension='.tif',
                     cam_file_extension='.tsai'):
@@ -36,7 +37,8 @@ def plot_footprints(cam_dir,
         img_base_name = os.path.splitext(os.path.split(cam_file)[-1])[0]
         img_file_name = os.path.join(img_dir, img_base_name + img_file_extension)
         
-        print('\nGenerating footprint for ' + img_base_name + img_file_extension +'.')
+        if verbose==True:
+            print('\nGenerating footprint for ' + img_base_name + img_file_extension +'.')
         
         footprint = bare.plot.prepare_footprint(img_file_name, 
                                                 cam_file, 
