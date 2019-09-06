@@ -63,7 +63,7 @@ def parallel_create_overview(image_list, scale=8, threads=8):
 def generate_corner_coordinates(image_file_name, 
                                 camera_file, 
                                 reference_dem_file_name,
-                                out_dir=None,
+                                output_directory=None,
                                 verbose=False):
     # TODO
     # - Make reference_dem optional and download coarse global DEM for target area if not supplied.
@@ -73,7 +73,7 @@ def generate_corner_coordinates(image_file_name,
     """
     
     # create output directory
-    out_dir_abs = bare.io.create_dir(out_dir)
+    out_dir_abs = bare.io.create_dir(output_directory)
  
     # image_file_base_name = os.path.splitext(image_file_name)[0]
     camera_extension = os.path.splitext(camera_file)[-1]
@@ -134,7 +134,7 @@ def run_command(command, verbose=False):
 
 
 def download_srtm(LLLON,LLLAT,URLON,URLAT,
-                  out_dir='./data/reference_dem/',
+                  output_directory='./data/reference_dem/',
                   verbose=True):
     # TODO
     # - Add function to determine extent automatically from input cameras

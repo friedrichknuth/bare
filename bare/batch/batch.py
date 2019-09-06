@@ -13,7 +13,7 @@ import bare.plot
 def plot_footprints(cam_dir, 
                     img_dir, 
                     reference_dem,
-                    out_dir=None,
+                    output_directory=None,
                     show=False,
                     verbose=False,
                     basemap='ctx',
@@ -25,7 +25,7 @@ def plot_footprints(cam_dir,
     """
                     
     # create output directory               
-    out_dir_abs = bare.io.create_dir(out_dir)
+    out_dir_abs = bare.io.create_dir(output_directory)
     
     # get list of camera files
     cam_list = sorted(glob.glob(os.path.join(cam_dir, '*'+ cam_file_extension)))
@@ -43,7 +43,7 @@ def plot_footprints(cam_dir,
         footprint = bare.plot.prepare_footprint(img_file_name, 
                                                 cam_file, 
                                                 reference_dem, 
-                                                out_dir=out_dir)
+                                                output_directory=output_directory)
                  
         if footprint is not None:
             crs = footprint.crs
@@ -100,7 +100,7 @@ def plot_ip_over_images(ba_dir,
                         img_dir, 
                         img_extension='.tif',
                         scale=1.0, 
-                        out_dir='qc_plots/interest_points'):
+                        output_directory='qc_plots/interest_points'):
 
     '''
     Function to visualize interest points in an image.
@@ -111,7 +111,7 @@ def plot_ip_over_images(ba_dir,
     print('plotting interest points over images...')
 
     # create output directory
-    out_dir_abs = bare.io.create_dir(out_dir)
+    out_dir_abs = bare.io.create_dir(output_directory)
 
     # convert interest points in binary vwip files to csv.
     ip_csv_list = bare.core.iter_ip_to_csv(ba_dir)
@@ -127,7 +127,7 @@ def plot_mp_over_images(ba_dir,
                         img_dir, 
                         img_extension='.tif', 
                         scale=1.0,
-                        out_dir='qc_plots/match_points'): 
+                        output_directory='qc_plots/match_points'): 
 
     '''
     Function to visualize match points found between two images.
@@ -140,7 +140,7 @@ def plot_mp_over_images(ba_dir,
     print('plotting match points over images...')
 
     # create output directory
-    out_dir_abs = bare.io.create_dir(out_dir)
+    out_dir_abs = bare.io.create_dir(output_directory)
 
     # convert .match files to csv
     match_csv_list = bare.core.iter_mp_to_csv(ba_dir)
@@ -164,7 +164,7 @@ def plot_all_qc_products(ba_dir,
     bare.plot.plot_tsai_camera_positions_before_and_after(ba_dir,
                                                 input_cam_dir,
                                                 glacier_shape_fn=glacier_shape_fn,
-                                                out_dir='qc_plots/camera_positions')
+                                                output_directory='qc_plots/camera_positions')
 
     plot_ip_over_images(ba_dir,
                         img_dir, 
@@ -174,9 +174,9 @@ def plot_all_qc_products(ba_dir,
                         img_dir, 
                         img_extension=img_extension)
 
-    bare.plot.plot_dxdy(ba_dir,out_dir='qc_plots/dxdy')
+    bare.plot.plot_dxdy(ba_dir,output_directory='qc_plots/dxdy')
 
-    bare.plot.plot_residuals(ba_dir,out_dir='qc_plots/residuals')
+    bare.plot.plot_residuals(ba_dir,output_directory='qc_plots/residuals')
     
 
                              

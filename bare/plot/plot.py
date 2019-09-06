@@ -58,12 +58,12 @@ def plot_cam(footprint_polygon, camera_positions, basemap='ctx', camera_type='.x
     return line0, line1, line2, line3
 
 
-def prepare_footprint(img_file_name, camera_file, reference_dem, out_dir=None):
+def prepare_footprint(img_file_name, camera_file, reference_dem, output_directory=None):
     
     gcp_file = bare.utils.generate_corner_coordinates(img_file_name, 
                                                       camera_file, 
                                                       reference_dem,
-                                                      out_dir=out_dir)                         
+                                                      output_directory=output_directory)                         
                                  
     footprint_polygon = bare.core.gcp_corners_to_gdf_polygon(gcp_file)
     if type(footprint_polygon) == gpd.geodataframe.GeoDataFrame:
@@ -73,7 +73,7 @@ def prepare_footprint(img_file_name, camera_file, reference_dem, out_dir=None):
         return
 
 def plot_footprint(img_file_name, camera_file, 
-                   reference_dem, out_dir=None,
+                   reference_dem, output_directory=None,
                    basemap='ctx', cam_on=True,
                    verbose=False):
     # TODO
@@ -83,7 +83,7 @@ def plot_footprint(img_file_name, camera_file,
     Function to plot camera footprints.
     """
                                 
-    out_dir_abs = bare.io.create_dir(out_dir)
+    out_dir_abs = bare.io.create_dir(output_directory)
     img_base_name = os.path.splitext(os.path.split(img_file_name)[-1])[0]
     cam_extension = os.path.splitext(camera_file)[-1] 
     
@@ -282,13 +282,13 @@ def mp_plot(img1_fn, img2_fn, match_csv_fn, out_dir_abs=None, scale=1.0):
         plt.show()
 
 
-def plot_dxdy(ba_dir, out_dir='qc_plots/dxdy'):
+def plot_dxdy(ba_dir, output_directory='qc_plots/dxdy'):
     # TODO
     # - Break this into a dedicated function and move iteration to batch
     print('plotting dxdy...')
 
     # create output directory
-    out_dir_abs = bare.io.create_dir(out_dir)
+    out_dir_abs = bare.io.create_dir(output_directory)
 
     match_csv_list = bare.core.iter_mp_to_csv(ba_dir)
 
@@ -311,7 +311,7 @@ def plot_dxdy(ba_dir, out_dir='qc_plots/dxdy'):
         plt.close()
 
 
-def plot_residuals(ba_dir, out_dir=None, ascending=True, basemap='ctx', glacier_shape_fn=None):
+def plot_residuals(ba_dir, output_directory=None, ascending=True, basemap='ctx', glacier_shape_fn=None):
     # TODO
     # - Create interactive plot (html with bokeh maybe) to pan and zoom around
     # when residuals end up in weird places.
@@ -327,7 +327,7 @@ def plot_residuals(ba_dir, out_dir=None, ascending=True, basemap='ctx', glacier_
     print('Plotting residuals before and after bundle adjustment...')
     
     # create output directory
-    out_dir_abs = bare.io.create_dir(out_dir)
+    out_dir_abs = bare.io.create_dir(output_directory)
     
     initial_point_map_csv_fn = glob.glob(os.path.join(ba_dir,'*initial_*_pointmap*csv'))[0]
     final_point_map_csv_fn = glob.glob(os.path.join(ba_dir,'*final_*_pointmap*csv'))[0]
