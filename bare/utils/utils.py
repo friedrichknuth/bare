@@ -71,18 +71,18 @@ def generate_corner_coordinates(image_file_name,
     """
     Function to generate corner coordinates using cam_gen. Continuous reference DEM for full coverage area must be supplied to approximate footprint.
     """
-    
-    # create output directory
-    out_dir_abs = bare.io.create_dir(output_directory)
  
-    # image_file_base_name = os.path.splitext(image_file_name)[0]
+    out_dir_abs = bare.io.create_dir(output_directory)
+    
     camera_extension = os.path.splitext(camera_file)[-1]
     image_file_path, image_file_base_name, image_file_extension = bare.io.split_file(image_file_name)
     
+    
+  
     out_cam = os.path.join(out_dir_abs, image_file_base_name + '_cam_gen.tsai')
     gcp_file = os.path.join(out_dir_abs, image_file_base_name + '.gcp')
     
-    # check reference dem crs
+    
     geotif = rasterio.open(reference_dem_file_name)
     crs = str(geotif.crs)
     if crs[5:] != '4326':
@@ -90,8 +90,9 @@ def generate_corner_coordinates(image_file_name,
         
     
     if not os.path.isfile(gcp_file):
-        print("Running ASP cam_gen to calculate image footprint on ground from input camera file and reference DEM.")
-        print('Assuming corner coordinates derived from reference DEM are in EPSG 4326.')
+        if verbose == True:
+            print("Running ASP cam_gen to calculate image footprint on ground from input camera file and reference DEM.")
+            print('Assuming corner coordinates derived from reference DEM are in EPSG 4326.')
         
         if camera_extension == '.tsai':
             call = ['cam_gen', image_file_name, 
@@ -109,6 +110,7 @@ def generate_corner_coordinates(image_file_name,
                     '--gcp-file', gcp_file, 
                     '--sample-file', camera_file,
                     '--input-camera', camera_file]
+            
       
         run_command(call, verbose=verbose)
         return gcp_file

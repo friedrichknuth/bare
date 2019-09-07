@@ -396,6 +396,7 @@ def plot_tsai_camera_positions_before_and_after(ba_dir,
     # TODO
     # - Reduce duplicate plotting code with plot_z_camera_positions() and 
     #   plot_xy_camera_positions() by passing axis object to this function. 
+    # - Add option to pass custom extent
 
     """
     Function to plot camera positions in x, y, and z before and after
@@ -415,12 +416,12 @@ def plot_tsai_camera_positions_before_and_after(ba_dir,
     fig, ax = plt.subplots(1,2,figsize=(20,10))
     positions_before_ba.plot(column='z',
                              ax=ax[0],
-                             cmap='viridis',
+                             cmap='winter',
                              legend=True, 
                              edgecolor='k')
     positions_after_ba.plot(column='z',
                             ax=ax[1], 
-                            cmap='viridis',
+                            cmap='winter',
                             legend=True, 
                             edgecolor='k')
 

@@ -23,19 +23,24 @@ def plot_footprints(cam_dir,
     """
     Function to plot image footprints from images and camera files
     """
-                    
-    # create output directory               
+                                  
     out_dir_abs = bare.io.create_dir(output_directory)
     
-    # get list of camera files
-    cam_list = sorted(glob.glob(os.path.join(cam_dir, '*'+ cam_file_extension)))
+    cam_list = sorted(glob.glob(os.path.join(cam_dir, '*' + cam_file_extension)))
+    img_list = sorted(glob.glob(os.path.join(img_dir, '*' + img_file_extension)))
         
     df = pd.DataFrame()
     
     for cam_file in cam_list:
         
-        img_base_name = os.path.splitext(os.path.split(cam_file)[-1])[0]
-        img_file_name = os.path.join(img_dir, img_base_name + img_file_extension)
+        cam_file_path, cam_file_base_name, cam_file_extension = bare.io.split_file(cam_file)
+        
+        for img_file in img_list:
+            img_file_path, img_file_base_name, img_file_extension = bare.io.split_file(img_file)
+            
+            if img_file_base_name in cam_file_base_name:
+                img_file_name = img_file
+        
         
         if verbose==True:
             print('\nGenerating footprint for ' + img_base_name + img_file_extension +'.')
