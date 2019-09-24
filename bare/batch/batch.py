@@ -4,6 +4,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import contextily as ctx
 import geopandas as gpd
+from pathlib import Path
+import shutil
 
 import bare.io
 import bare.core
@@ -13,12 +15,13 @@ import bare.plot
 def plot_footprints(cam_dir, 
                     img_dir, 
                     reference_dem,
-                    output_directory=None,
+                    output_directory='qc/tmp',
                     show=False,
                     verbose=False,
                     basemap='ctx',
                     img_file_extension='.tif',
-                    cam_file_extension='.tsai'):
+                    cam_file_extension='.tsai',
+                    cleanup=True):
                     
     """
     Function to plot image footprints from images and camera files
@@ -90,7 +93,7 @@ def plot_footprints(cam_dir,
         #         legend_kwds={'bbox_to_anchor': (1.41, 1)})
 
 
-        ctx.add_basemap(ax)
+        bare.plot.add_ctx_basemap(ax,15)
         ax.set_title('camera footprints')
 
         # visualize or write to file if out_dir_abs provided
@@ -98,8 +101,18 @@ def plot_footprints(cam_dir,
             out = os.path.join(out_dir_abs, 'footprints.png')
             fig.savefig(out, bbox_inches = "tight")
             plt.close()
+            if cleanup == True:
+                for p in Path(out_dir_abs).glob("*.tsai"):
+                    p.unlink()
+                for p in Path(out_dir_abs).glob("*.gcp"):
+                    p.unlink()
         else:
             plt.show()
+            if cleanup == True:
+                shutil.rmtree(out_dir_abs)
+            
+
+            
 
 def plot_ip_over_images(ba_dir, 
                         img_dir, 
