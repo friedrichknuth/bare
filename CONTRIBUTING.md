@@ -16,9 +16,6 @@ Geospatial data wrangling functions.
 #### bare/io.io.py 
 Basic io functions.
 
-#### bare/io.io.py 
-Product specific plotting functions.
-
 #### bare/plot.plot.py 
 Functions to plot bundle adjust products.
 
