@@ -15,7 +15,7 @@ import bare.plot
 def plot_footprints(cam_dir, 
                     img_dir, 
                     reference_dem,
-                    output_directory='qc/tmp',
+                    output_directory='qc/footprints',
                     show=False,
                     verbose=False,
                     basemap='ctx',
@@ -26,6 +26,8 @@ def plot_footprints(cam_dir,
     """
     Function to plot image footprints from images and camera files
     """
+    # TODO
+    # - This should use bare.plot.plot_footprint. Needs to be reconciled.
                                   
     out_dir_abs = bare.io.create_dir(output_directory)
     
@@ -93,7 +95,7 @@ def plot_footprints(cam_dir,
         #         legend_kwds={'bbox_to_anchor': (1.41, 1)})
 
 
-        bare.plot.add_ctx_basemap(ax,15)
+        bare.plot.add_ctx_basemap(ax)
         ax.set_title('camera footprints')
 
         # visualize or write to file if out_dir_abs provided

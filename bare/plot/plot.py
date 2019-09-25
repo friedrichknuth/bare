@@ -166,7 +166,7 @@ def plot_footprint(img_file_name, camera_file,
             ax.set_title('camera footprint')
             
         if basemap == 'ctx':
-            ctx.add_basemap(ax)
+            add_ctx_basemap(ax)
 
         for idx, row in footprint_polygon.iterrows():
             plt.annotate(s=row['file_name'],
@@ -328,7 +328,12 @@ def plot_dxdy(ba_dir, output_directory='qc_plots/dxdy'):
         plt.close()
 
 
-def plot_residuals(ba_dir, output_directory=None, ascending=True, basemap='ctx', glacier_shape_fn=None):
+def plot_residuals(ba_dir, 
+                   output_directory=None, 
+                   ascending=True, 
+                   basemap='ctx', 
+                   glacier_shape_fn=None,
+                   share_axes=True):
     # TODO
     # - Create interactive plot (html with bokeh maybe) to pan and zoom around
     # when residuals end up in weird places.
@@ -356,11 +361,11 @@ def plot_residuals(ba_dir, output_directory=None, ascending=True, basemap='ctx',
     initial_gdf = bare.core.ba_pointmap_to_gdf(initial_df, ascending=ascending)
     final_gdf = bare.core.ba_pointmap_to_gdf(final_df, ascending=ascending)
 
-    # TODO
-    # - Filter outliers on 'after' plot to make sharex, sharey more useful. Right now the
-    #   extent may reach accross the globe. See examples.
-    # fig, ax = plt.subplots(1,2,figsize=(10,5), sharex=True, sharey=True)
-    fig, ax = plt.subplots(1,2,figsize=(10,5))
+    if share_axes == True:
+        fig, ax = plt.subplots(1,2,figsize=(10,5), sharex=True, sharey=True)
+    else:
+        fig, ax = plt.subplots(1,2,figsize=(10,5))
+        
     clim = np.percentile(initial_gdf['mean_residual'].values,(2,98))
 
     # add plots to show number of images per match point
@@ -390,6 +395,18 @@ def plot_residuals(ba_dir, output_directory=None, ascending=True, basemap='ctx',
         glacier_shape = glacier_shape.to_crs({'init' :'epsg:3857'})
         glacier_shape.plot(ax=ax[0],alpha=0.5)
         glacier_shape.plot(ax=ax[1],alpha=0.5)
+    
+    if share_axes==False:
+        ax_0_xlim = ax[0].get_xlim()
+        ax_1_xlim = ax[1].get_xlim()
+        ax_0_max = abs(abs(ax_0_xlim[0]) - abs(ax_0_xlim[1]))
+        ax_1_max = abs(abs(ax_1_xlim[0]) - abs(ax_1_xlim[1]))
+        if ax_1_max > ax_0_max:
+            ax[1].set_xlim(ax[0].get_xlim())
+            ax[1].set_ylim(ax[0].get_ylim())
+        else:
+            ax[0].set_xlim(ax[1].get_xlim())
+            ax[0].set_ylim(ax[1].get_ylim())
 
     if basemap == 'ctx':
         ctx.add_basemap(ax[0])
@@ -443,8 +460,8 @@ def plot_tsai_camera_positions_before_and_after(ba_dir,
                             edgecolor='k')
 
     
-    add_ctx_basemap(ax[0],15)
-    add_ctx_basemap(ax[1],15)
+    add_ctx_basemap(ax[0])
+    add_ctx_basemap(ax[1])
 
     ax[0].set_title('xy camera positions before bundle adjust')
     ax[1].set_title('xy camera positions after bundle adjust')
@@ -484,7 +501,7 @@ def plot_tsai_camera_positions_before_and_after(ba_dir,
         plt.show() 
 
     
-def add_ctx_basemap(ax, zoom, url='https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}'):
+def add_ctx_basemap(ax, zoom=15, url='https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}'):
     xmin, xmax, ymin, ymax = ax.axis()
     basemap, extent = ctx.bounds2img(xmin, ymin, xmax, ymax, zoom=zoom, url=url)
     ax.imshow(basemap, extent=extent, interpolation='bilinear')
@@ -504,7 +521,7 @@ def plot_xy_camera_positions(camera_positions,
                              cmap='winter',
                              legend=True, 
                              edgecolor='k')
-    add_ctx_basemap(ax,15)
+    add_ctx_basemap(ax)
     
     ax.set_title(title)
     ax.ticklabel_format(useOffset=False, style='plain', axis='both')
