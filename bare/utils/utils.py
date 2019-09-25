@@ -110,6 +110,9 @@ def generate_corner_coordinates(image_file_name,
                     '--gcp-file', gcp_file, 
                     '--sample-file', camera_file,
                     '--input-camera', camera_file]
+                    
+        else:
+            print('Unknown camera extension', camera_extension)
             
       
         run_command(call, verbose=verbose)

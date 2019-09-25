@@ -50,8 +50,8 @@ def plot_footprints(cam_dir,
         
         footprint = bare.plot.prepare_footprint(img_file_name, 
                                                 cam_file, 
-                                                reference_dem, 
-                                                output_directory=output_directory)
+                                                reference_dem,
+                                                cleanup=cleanup)
                  
         if footprint is not None:
             crs = footprint.crs
@@ -101,11 +101,7 @@ def plot_footprints(cam_dir,
             out = os.path.join(out_dir_abs, 'footprints.png')
             fig.savefig(out, bbox_inches = "tight")
             plt.close()
-            if cleanup == True:
-                for p in Path(out_dir_abs).glob("*.tsai"):
-                    p.unlink()
-                for p in Path(out_dir_abs).glob("*.gcp"):
-                    p.unlink()
+
         else:
             plt.show()
             if cleanup == True:
@@ -118,7 +114,7 @@ def plot_ip_over_images(ba_dir,
                         img_dir, 
                         img_extension='.tif',
                         scale=1.0, 
-                        output_directory='qc_plots/interest_points'):
+                        output_directory='qc/interest_points'):
 
     '''
     Function to visualize interest points in an image.
@@ -145,7 +141,7 @@ def plot_mp_over_images(ba_dir,
                         img_dir, 
                         img_extension='.tif', 
                         scale=1.0,
-                        output_directory='qc_plots/match_points'): 
+                        output_directory='qc/match_points'): 
 
     '''
     Function to visualize match points found between two images.
@@ -180,7 +176,7 @@ def plot_all_qc_products(ba_dir,
 
     bare.plot.plot_tsai_camera_positions_before_and_after(ba_dir,
                                                 input_cam_dir,
-                                                output_directory='qc_plots/camera_positions')
+                                                output_directory='qc/camera_positions')
 
     plot_ip_over_images(ba_dir,
                         img_dir, 
@@ -190,9 +186,9 @@ def plot_all_qc_products(ba_dir,
                         img_dir, 
                         img_extension=img_extension)
 
-    bare.plot.plot_dxdy(ba_dir,output_directory='qc_plots/dxdy')
+    bare.plot.plot_dxdy(ba_dir,output_directory='qc/dxdy')
 
-    bare.plot.plot_residuals(ba_dir,output_directory='qc_plots/residuals')
+    bare.plot.plot_residuals(ba_dir,output_directory='qc/residuals')
     
 
                              

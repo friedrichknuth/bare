@@ -6,6 +6,7 @@ import pandas as pd
 import geopandas as gpd
 from osgeo import gdal
 from shapely.geometry import Point
+from pathlib import Path
 
 
 import contextily as ctx
@@ -58,14 +59,27 @@ def plot_cam(footprint_polygon, camera_positions, basemap='ctx', camera_type='.x
     return line0, line1, line2, line3
 
 
-def prepare_footprint(img_file_name, camera_file, reference_dem, output_directory=None):
+def prepare_footprint(img_file_name, 
+                      camera_file, 
+                      reference_dem, 
+                      output_directory='qc/tmp',
+                      cleanup=True,
+                      verbose=False):
     
     gcp_file = bare.utils.generate_corner_coordinates(img_file_name, 
                                                       camera_file, 
                                                       reference_dem,
-                                                      output_directory=output_directory)                         
+                                                      output_directory=output_directory,
+                                                      verbose=verbose)                         
                                  
     footprint_polygon = bare.core.gcp_corners_to_gdf_polygon(gcp_file)
+    
+    if cleanup == True:
+        for p in Path(output_directory).glob("*.tsai"):
+            p.unlink()
+        for p in Path(output_directory).glob("*.gcp"):
+            p.unlink()
+    
     if type(footprint_polygon) == gpd.geodataframe.GeoDataFrame:
         return footprint_polygon      
     else:
@@ -87,7 +101,10 @@ def plot_footprint(img_file_name, camera_file,
     img_base_name = os.path.splitext(os.path.split(img_file_name)[-1])[0]
     cam_extension = os.path.splitext(camera_file)[-1] 
     
-    footprint_polygon = prepare_footprint(img_file_name, camera_file, reference_dem)
+    footprint_polygon = prepare_footprint(img_file_name,
+                                          camera_file,
+                                          reference_dem,
+                                          verbose=verbose)
     
     if type(footprint_polygon) == gpd.geodataframe.GeoDataFrame:
         print('Plotting camera footprint.')
