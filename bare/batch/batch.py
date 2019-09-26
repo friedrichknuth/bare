@@ -172,13 +172,13 @@ def plot_mp_over_images(ba_dir,
 
 
 def plot_all_qc_products(ba_dir,
-               img_dir,
-               input_cam_dir,
-               img_extension='8.tif'):
+                         img_dir,
+                         input_cam_dir,
+                         img_extension='8.tif'):
 
     bare.plot.plot_tsai_camera_positions_before_and_after(ba_dir,
-                                                input_cam_dir,
-                                                output_directory='qc/camera_positions')
+                                                          input_cam_dir,
+                                                          output_directory='qc/camera_positions')
 
     plot_ip_over_images(ba_dir,
                         img_dir, 
