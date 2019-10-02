@@ -550,6 +550,7 @@ def plot_z_camera_positions(camera_positions,
     
     ax.set_title(title)
     ax.tick_params(labelrotation=90,axis='x')
+    ax.ticklabel_format(useOffset=False, style='plain',axis='y')
     ax.set_xlabel('\nimage')
     ax.set_ylabel('height above datum (m)')
 
@@ -567,4 +568,7 @@ def camera_models_to_ctx_df(camera_model_directory,
                                                                   extension=extension)
     camera_positions = camera_positions.to_crs({'init' :'epsg:3857'})
     bare.geospatial.extract_gpd_geometry(camera_positions)
+    
+    #assuming z is in meters, we can drop submeter precision in the altitude estimate
+    camera_positions['z'] = camera_positions['z'].values.astype('int')
     return camera_positions
