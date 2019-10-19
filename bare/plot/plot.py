@@ -7,6 +7,7 @@ import geopandas as gpd
 from osgeo import gdal
 from shapely.geometry import Point
 from pathlib import Path
+import shutil
 
 
 import contextily as ctx
@@ -75,10 +76,11 @@ def prepare_footprint(img_file_name,
     footprint_polygon = bare.core.gcp_corners_to_gdf_polygon(gcp_file)
     
     if cleanup == True:
-        for p in Path(output_directory).glob("*.tsai"):
-            p.unlink()
-        for p in Path(output_directory).glob("*.gcp"):
-            p.unlink()
+        shutil.rmtree(output_directory)
+#         for p in Path(output_directory).glob("*.tsai"):
+#             p.unlink()
+#         for p in Path(output_directory).glob("*.gcp"):
+#             p.unlink()
     
     if type(footprint_polygon) == gpd.geodataframe.GeoDataFrame:
         return footprint_polygon      

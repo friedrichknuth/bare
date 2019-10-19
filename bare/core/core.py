@@ -158,10 +158,16 @@ def parse_image_names_from_match_file_name(match_file, img_dir, img_extension):
 
     # extract image pair file names from ASP match file name
     # e.g. split ../run-v2_sub8__v3_sub8-clean.csv into v2_sub8 and v3_sub8
-    match_img1_name = os.path.split(match_file)[-1].split('-')[-2].split('__')[0]
-    img1_file_name = os.path.join(img_dir, match_img1_name+img_ext)
-    match_img2_name = os.path.split(match_file)[-1].split('-')[-2].split('__')[1]
-    img2_file_name = os.path.join(img_dir, match_img2_name+img_ext)
+    if 'clean' in match_file:
+        match_img1_name = os.path.split(match_file)[-1].split('-')[-2].split('__')[0]
+        img1_file_name = os.path.join(img_dir, match_img1_name+img_ext)
+        match_img2_name = os.path.split(match_file)[-1].split('-')[-2].split('__')[1]
+        img2_file_name = os.path.join(img_dir, match_img2_name+img_ext)
+    else:
+        match_img1_name = os.path.split(match_file)[-1].split('-')[-1].split('__')[0]
+        img1_file_name = os.path.join(img_dir, match_img1_name+img_ext)
+        match_img2_name = os.path.split(match_file)[-1].split('-')[-1].split('__')[1].split('.')[0]
+        img2_file_name = os.path.join(img_dir, match_img2_name+img_ext)
     
     return img1_file_name, img2_file_name
 

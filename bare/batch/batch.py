@@ -164,7 +164,7 @@ def plot_mp_over_images(ba_dir,
     # get images list
     for match_csv_fn in match_csv_list:
         
-        # extract image pairs
+            # extract image pairs
         img1_file_name, img2_file_name = \
                 bare.core.parse_image_names_from_match_file_name(match_csv_fn, img_dir, img_extension)
                 
