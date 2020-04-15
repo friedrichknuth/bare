@@ -503,8 +503,16 @@ def plot_tsai_camera_positions_before_and_after(ba_dir,
         plt.show() 
 
     
-def add_ctx_basemap(ax, zoom=15, url='https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}'):
+def add_ctx_basemap(ax, 
+                    zoom=15, 
+                    url='https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+                    buffer = 0):
     xmin, xmax, ymin, ymax = ax.axis()
+    xmin = xmin - buffer
+    xmax = xmax + buffer
+    ymin = ymin - buffer
+    ymax = ymax + buffer
+    
     basemap, extent = ctx.bounds2img(xmin, ymin, xmax, ymax, zoom=zoom, url=url)
     ax.imshow(basemap, extent=extent, interpolation='bilinear')
     # restore original x/y limits
