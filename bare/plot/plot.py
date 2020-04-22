@@ -507,6 +507,19 @@ def add_ctx_basemap(ax,
                     zoom=15, 
                     url='https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
                     buffer = 0):
+                    
+    """
+    OpenTopoMap       = 'https://tile.opentopomap.org/{Z}/{X}/{Y}.png'
+    OpenStreetMap     = 'http://tile.openstreetmap.org/{Z}/{X}/{Y}.png'
+    GoogleHybrid      = 'https://mt1.google.com/vt/lyrs=y&x={X}&y={Y}&z={Z}'
+    GoogleSatellite   = 'https://mt1.google.com/vt/lyrs=s&x={X}&y={Y}&z={Z}'
+    GoogleRoad        = 'https://mt1.google.com/vt/lyrs=m&x={X}&y={Y}&z={Z}'
+    GoogleTerrain     = 'http://mt0.google.com/vt/lyrs=p&hl=en&x={X}&y={Y}&z={Z}'
+    GoogleTerrainOnly = 'http://mt0.google.com/vt/lyrs=t&hl=en&x={X}&y={Y}&z={Z}'
+    ESRIImagery       = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{Z}/{Y}/{X}.jpg'
+    Wikimedia         = 'https://maps.wikimedia.org/osm-intl/{Z}/{X}/{Y}@2x.png'
+    """
+                    
     xmin, xmax, ymin, ymax = ax.axis()
     xmin = xmin - buffer
     xmax = xmax + buffer
